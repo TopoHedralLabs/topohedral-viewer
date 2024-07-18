@@ -1,0 +1,44 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb", 
+            "request": "launch",
+            "name": "topohedral-viewer Unit Tests",
+            "cargo": {
+                "args": [
+                    "test", 
+                    "--lib",
+                    "--no-run",
+                    "--package=topohedral-viewer"
+                ], 
+                "filter": {
+                    "name": "topohedral_viewer",
+                    "kind": "lib",
+                }
+            },
+            "args": [], 
+            "cwd": "${workspaceFolder}", 
+            "sourceLanguages": ["rust"]
+        },
+        {
+            "type": "lldb", 
+            "request": "launch",
+            "name": "topohedral-viewer Main",
+            "cargo": {
+                "args": [
+                    "build", 
+                    "--bin=topohedral-viewer",
+                    "--package=topohedral-viewer"
+                ], 
+                "filter": {
+                    "name": "topohedral-viewer",
+                    "kind": "bin",
+                }
+            },
+            "args": [], 
+            "cwd": "${workspaceFolder}", 
+            "sourceLanguages": ["rust"]
+        }
+    ]
+}

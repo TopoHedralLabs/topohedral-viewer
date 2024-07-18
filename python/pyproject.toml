@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "topohedral-viewer-py"
+version = "0.1.0"
+description = ""
+authors = ["John Ferguson <JAFerguson952@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+grpcio = "1.64.1"
+grpcio-tools = "1.64.1"
+
+[tool.poetry.scripts]
+generate_proto = "generate-proto:generate_protos"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
