@@ -125,6 +125,7 @@ enum RcpStatus
 }
 //..................................................................................................
 //}}}
+//{{{ col: TopoViewer
 //{{{ struct: TopoViewer
 /// The TopoViewer class is the main entry point for the TopoViewer application.
 pub struct TopoViewer<'a>
@@ -138,7 +139,8 @@ pub struct TopoViewer<'a>
     tokio_runtime: Runtime,
     shutdown_sender: Option<mpsc::Sender<()>>,
 }
-
+//}}}
+//{{{ impl TopoViewer
 impl<'a> TopoViewer<'a>
 {
     //{{{ fun: new
@@ -295,9 +297,11 @@ impl<'a> TopoViewer<'a>
     }
     //}}}
 }
-
+//}}}
+//{{{ impl: ApplicationHandler for TopoViewer
 impl ApplicationHandler<TopoHedralEvent> for TopoViewer<'static>
 {
+    //{{{ fun: resumed
     fn resumed(
         &mut self,
         event_loop: &winit::event_loop::ActiveEventLoop,
@@ -345,7 +349,8 @@ impl ApplicationHandler<TopoHedralEvent> for TopoViewer<'static>
             {}
         }
     }
-
+    //}}}
+    //{{{ fun: window_event
     fn window_event(
         &mut self,
         event_loop: &winit::event_loop::ActiveEventLoop,
@@ -396,8 +401,8 @@ impl ApplicationHandler<TopoHedralEvent> for TopoViewer<'static>
             _ => {},
         }
     }
-
-
+    //}}}
+    //{{{ fun: user_event
     fn user_event(&mut self, event_loop: &winit::event_loop::ActiveEventLoop, event: TopoHedralEvent) {
         match event
         {
@@ -408,9 +413,9 @@ impl ApplicationHandler<TopoHedralEvent> for TopoViewer<'static>
             }
         }
     }
-
-
+    //}}}
 }
+//}}}
 //..................................................................................................
 //}}}
 //{{{ enum:  TopoHedralEvent

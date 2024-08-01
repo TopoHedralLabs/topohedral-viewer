@@ -4,6 +4,13 @@ syntax = "proto3";
 package d2rpc;
 
 
+message Color
+{
+    float r = 1;
+    float g = 2;
+    float b = 3;
+}
+
 
 message Vec2 {
     float x = 1;
@@ -26,6 +33,18 @@ message AddAxesRequest {
 
 message AddAxesResponse {
     uint64 axes_id = 1;
+}
+// .................................................................................................
+
+message SquareDescriptor {
+    Vec2 origin = 1;
+    Vec2 x_axis = 2;
+    Vec2 y_axis = 3;
+    float lenx = 4;
+    float leny = 5;
+    Color line_color = 6;
+    Color tri_color = 7;
+
 }
 // .................................................................................................
 
