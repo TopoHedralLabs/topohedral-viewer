@@ -1,12 +1,20 @@
-//.................................. std
+//! This module defines the TopoHedralViewer application.
+//!
+//! This module defines the options which the application accepts, and the entry point for the
+//! application itself in ``run_topoviewer``.
+//--------------------------------------------------------------------------------------------------
 
+//{{{ crate imports 
+use crate::d2;
+use crate::d3;
+//}}}
+//{{{ std imports 
 use core::net::SocketAddr;
 use std::fmt::Display;
 use std::net::{IpAddr, Ipv4Addr};
 use std::sync::{Arc, Mutex};
-
-use wgpu::core::command;
-//.................................. 3rd party
+//}}}
+//{{{ dep imports 
 use winit::{
     self,
     application::ApplicationHandler,
@@ -21,18 +29,17 @@ use tokio::{runtime, sync::mpsc};
 use log::{error, info};
 
 use clap::{Args, Parser, Subcommand, ValueEnum};
-//.................................. crate
-use crate::d2;
-use crate::d3;
+//}}}
 //--------------------------------------------------------------------------------------------------
 
-
+//{{{ col: StateHandles
 /// A shared, thread-safe handle to the 2D viewer state.
 pub type State2Handle<'a> = Arc<Mutex<d2::State<'a>>>;
 /// A shared, thread-safe handle to the 3D viewer state.
 pub type State3Handle<'a> = Arc<Mutex<d3::State<'a>>>;
 //..................................................................................................
-
+//}}}
+//{{{ enum: RPCOption
 /// The RPCOption enum contains the options for whether to start the RPC server and if so on
 /// what port
 #[derive(Clone, Copy, Debug, Subcommand)]
@@ -47,7 +54,8 @@ pub enum RPCOption
     },
 }
 //..................................................................................................
-
+//}}}
+//{{{ enum: Mode
 /// The Mode enum contains the options for whether to start the 2D or 3D viewer.
 #[derive(Clone, Copy, Debug, ValueEnum)]
 pub enum Mode
@@ -58,7 +66,8 @@ pub enum Mode
     D3,
 }
 //..................................................................................................
-
+//}}}
+//{{{ struct: TopoViewerOptions
 /// The TopoViewerOptions struct contains the options that can be passed to the TopoViewer
 /// constructor.
 #[derive(Debug, Clone, Copy, Parser)]
@@ -101,7 +110,8 @@ impl Display for TopoViewerOptions
     }
 }
 //..................................................................................................
-
+//}}}
+//{{{ enum: RcpStatus
 /// ENcodes the status of the RPC server. This can be non-existent if running topoviewer in non-rcp 
 /// mode, running if the rcp exists and is running or stopped if the rcp exists but is not running.
 enum RcpStatus
@@ -114,7 +124,8 @@ enum RcpStatus
     Stopped,
 }
 //..................................................................................................
-
+//}}}
+//{{{ struct: TopoViewer
 /// The TopoViewer class is the main entry point for the TopoViewer application.
 pub struct TopoViewer<'a>
 {
@@ -130,6 +141,7 @@ pub struct TopoViewer<'a>
 
 impl<'a> TopoViewer<'a>
 {
+    //{{{ fun: new
     /// Initialises a TopoViewer instance.
     ///
     /// This initialises the underlying state objects for either the 2D or 3D viewer and
@@ -185,12 +197,14 @@ impl<'a> TopoViewer<'a>
             shutdown_sender: None,
         }
     }
-
+    //}}}
+    //{{{ fun: runtime_handle§
     pub fn runtime_handle(&self) -> Handle
     {
         self.tokio_runtime.handle().clone()
     }
-
+    //}}}
+    //{{{ fun: get_state_2d_mut
     /// Returns a mutable reference to the 2D state handle, if the current mode is 2D.
     ///
     /// If the current mode is 3D, this method returns `None`.
@@ -212,7 +226,8 @@ impl<'a> TopoViewer<'a>
             Mode::D3 => None,
         }
     }
-
+    //}}}
+    //{{{ fun: get_state_3d_mut
     /// Returns a mutable reference to the 3D state handle, if the current mode is 3D.
     ///
     /// If the current mode is 2D, this method returns `None`.
@@ -234,7 +249,8 @@ impl<'a> TopoViewer<'a>
             }
         }
     }
-
+    //}}}
+    //{{{ fun: server_status 
     /// Returns whether the RPC server is currently running.
     ///
     /// This method checks the status of the RPC server handle for the current mode (2D or 3D) and
@@ -277,6 +293,7 @@ impl<'a> TopoViewer<'a>
 
         status 
     }
+    //}}}
 }
 
 impl ApplicationHandler<TopoHedralEvent> for TopoViewer<'static>
@@ -395,12 +412,14 @@ impl ApplicationHandler<TopoHedralEvent> for TopoViewer<'static>
 
 }
 //..................................................................................................
-
+//}}}
+//{{{ enum:  TopoHedralEvent
 enum TopoHedralEvent
 {
     RcpShutdown,
 }
-
+//}}}
+//{{{ fun: run_topoviewer
 pub fn run_topoviewer(topoviewer_options: &TopoViewerOptions)
 {
     // initialize the winit event loop
@@ -411,3 +430,4 @@ pub fn run_topoviewer(topoviewer_options: &TopoViewerOptions)
     let mut app = TopoViewer::new(topoviewer_options);
     event_loop.run_app(&mut app).unwrap();
 }
+//}}}
