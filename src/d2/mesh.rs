@@ -1,13 +1,25 @@
-//.................................. std
-//.................................. 3rd party
-use serde::{Deserialize, Serialize};    
-//.................................. crate
-use super::vertex::{Vertex, VertexDescriptor};
+//! This module contains the implementation of the `Mesh` struct for the 2D viewer.
+//!
+//! This module defines the set of items which may be  drawn in the 2D viewer and provides an 
+//! API for each type of item. The general item will simply take a mesh and draw it. 
+//--------------------------------------------------------------------------------------------------
+
+//{{{ crate imports 
 use crate::common::*;
 use crate::core::MeshCore;
+use super::vertex::{Vertex, VertexDescriptor};
+//}}}
+//{{{ std imports 
+//}}}
+//{{{ dep imports 
+use serde::{Deserialize, Serialize};    
+//}}}
+//--------------------------------------------------------------------------------------------------
 
+//{{{ type: Mesh
 pub type Mesh<'a> = MeshCore<'a, Vertex>;
-
+//}}}
+//{{{ struct: AxesDescriptor
 #[derive(Deserialize, Serialize)]
 pub struct AxesDescriptor
 {
@@ -18,7 +30,8 @@ pub struct AxesDescriptor
     pub pos_len: f32,
 }
 //..................................................................................................
-
+//}}}
+//{{{ struct: SquareDescriptor
 #[derive(Deserialize, Serialize)]
 pub struct SquareDescriptor
 {
@@ -32,7 +45,8 @@ pub struct SquareDescriptor
     pub cell_type: CellType,
 }
 //..................................................................................................
-
+//}}}
+//{{{ struct: CircleDescriptor
 #[derive(Deserialize, Serialize)]
 pub struct CircleDescriptor
 {
@@ -40,9 +54,22 @@ pub struct CircleDescriptor
     pub radius: f32,
     pub line_color: Color,
     pub tri_color: Color,
+    pub cell_type: CellType,
 }
 //..................................................................................................
-
+//}}}
+//{{{ trait: Mesh2D
+/// Defines a trait for creating and manipulating 2D meshes.
+///
+/// The `Mesh2D` trait provides a set of methods for creating and modifying 2D meshes, including:
+///
+/// - `create_axes`: Creates a mesh representing a set of coordinate axes.
+/// - `create_square`: Creates a mesh representing a 2D square.
+/// - `create_circle`: Creates a mesh representing a 2D circle.
+/// - `add_line`: Adds a line segment to the mesh.
+/// - `add_triangle`: Adds a triangle to the mesh.
+///
+/// Implementations of this trait can be used to generate and manipulate 2D meshes for various purposes, such as rendering or visualization.
 pub trait Mesh2D<'a>
 {
     fn create_axes(
@@ -75,7 +102,8 @@ pub trait Mesh2D<'a>
     );
 }
 //..................................................................................................
-
+//}}}
+//{{{ impl: Mesh2D for Mesh
 impl<'a> Mesh2D<'a> for Mesh<'a>
 {
     fn create_axes(
@@ -93,23 +121,64 @@ impl<'a> Mesh2D<'a> for Mesh<'a>
 
     }
 
+    /// Creates a 2D square mesh based on the provided `SquareDescriptor`.
+    ///
+    /// The `create_square` function takes a `SquareDescriptor` as input and returns a new `Mesh2D` instance. The function handles two cases:
+    ///
+    /// 1. `CellType::Line`: Creates a mesh with 4 lines representing the square.
+    /// 2. `CellType::Triangle`: Creates a mesh with 2 triangles representing the square.
+    ///
+    /// The function calculates the vertices of the square based on the `origin`, `x_axis`, `y_axis`, `lenx`, and `leny` fields of the `SquareDescriptor`. It then adds the lines or triangles to the mesh using the `add_line` and `add_triangle` methods.
+    ///
+    /// If the `cell_type` field of the `SquareDescriptor` is not `CellType::Line` or `CellType::Triangle`, the function will panic with the message "Unknown cell type".
     fn create_square(
-        square: &SquareDescriptor,
+        square_disc: &SquareDescriptor,
     ) -> Self
     {
-        let mut mesh = Mesh::from_num_triangles(2);
+        match(square_disc.cell_type) {
+            //{{{ case: CellType::Line
+            CellType::Line => {
+                let mut mesh = Mesh::from_num_lines(4);
 
-        let o = square.origin;
-        let dx = square.x_axis * square.lenx;
-        let dy =  square.y_axis * square.leny;
+                let o = square_disc.origin;
+                let dx = square_disc.x_axis * square_disc.lenx;
+                let dy =  square_disc.y_axis * square_disc.leny;
 
-        let v0 = o;
-        let v1 = o + dx;
-        let v2 = o + dx + dy;
-        let v3 = o + dy;
-        mesh.add_triangle(&v0, &v1, &v2,&square.line_color, &square.tri_color);
-        mesh.add_triangle(&v0, &v2, &v3,&square.line_color, &square.tri_color); 
-        mesh
+                let v0 = o;
+                let v1 = o + dx;
+                let v2 = o + dx + dy;
+                let v3 = o + dy;
+                mesh.add_line(&v0, &v1, &square_disc.line_color, &square_disc.tri_color);
+                mesh.add_line(&v1, &v2, &square_disc.line_color, &square_disc.tri_color);
+                mesh.add_line(&v2, &v3, &square_disc.line_color, &square_disc.tri_color);
+                mesh.add_line(&v3, &v0, &square_disc.line_color, &square_disc.tri_color);
+                mesh
+            },
+            //}}}
+            //{{{ case: CellType::Triangle
+            CellType::Triangle => {
+                let mut mesh = Mesh::from_num_triangles(2);
+
+                let o = square_disc.origin;
+                let dx = square_disc.x_axis * square_disc.lenx;
+                let dy =  square_disc.y_axis * square_disc.leny;
+
+                let v0 = o;
+                let v1 = o + dx;
+                let v2 = o + dx + dy;
+                let v3 = o + dy;
+                mesh.add_triangle(&v0, &v1, &v2,&square_disc.line_color, &square_disc.tri_color);
+                mesh.add_triangle(&v0, &v2, &v3,&square_disc.line_color, &square_disc.tri_color); 
+                mesh
+            },
+            //}}}
+            //{{{ default
+            _ => {
+                panic!("Unknown cell type");
+            }
+            //}}}
+        }
+
 
     }
 
@@ -178,12 +247,14 @@ impl<'a> Mesh2D<'a> for Mesh<'a>
     }
 }
 //..................................................................................................
+//}}}
 
-
-
+//-------------------------------------------------------------------------------------------------
+//{{{ mod: tests
 #[cfg(test)]
-mod tests 
+mod tests
 {
+  
     use super::*;
 
     #[test]
@@ -216,4 +287,5 @@ mod tests
     }
 
 
-} 
+}
+//}}}
