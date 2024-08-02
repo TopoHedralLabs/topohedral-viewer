@@ -191,8 +191,7 @@ impl EventController
         // handle key stroke to change octant of camera
         if self.key_stroke_state != KeyStrokeState::None
         {
-            if self.key_modifier_state.lshift_state() == ModifiersKeyState::Pressed ||
-               self.key_modifier_state.rshift_state() == ModifiersKeyState::Pressed
+            if self.key_modifier_state == winit::keyboard::ModifiersState::SHIFT
             {
                 let delta_angle = match self.key_stroke_state
                 {
