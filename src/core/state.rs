@@ -781,7 +781,7 @@ where
             // ---------------------------------- Key modifiers changed
             WindowEvent::ModifiersChanged(ev) if self.has_window(window_id) =>
             {
-                self.view_state.view_controller().key_modifiers_update(*ev);
+                self.view_state.view_controller().key_modifiers_update(ev.state());
                 self.window_request_redraw();
             }
             // ---------------------------------- Window resized
