@@ -1,25 +1,30 @@
+//! This module defines the 3D camera and the associated state which is used by wgpu to perform 
+//! transforms on the vertices of the model.
+//!
+//!
+//--------------------------------------------------------------------------------------------------
+
+//{{{ crate imports 
+use crate::common::*;
+use crate::events::*;
+//}}}
+//{{{ std imports 
+//}}}
+//{{{ dep imports 
 use bytemuck::{Pod, Zeroable};
 use embed_doc_image::embed_doc_image;
 use winit::keyboard::ModifiersKeyState;
+//}}}
+//--------------------------------------------------------------------------------------------------
 
-use crate::common::*;
-use crate::events::*;
-
+//{{{ col: constants
+/// The global up vector.
 const GLOBAL_UP: Vec3 = Vec3::new(0.0, 0.0, 1.0);
+/// The maximum angle the camera can pitch up or down.
 const PITCH_SAFE: f32 = 1.0e-2;
-
-#[rustfmt::skip]
-pub const OPENGL_TO_WGPU_MATRIX: Mat4 = Mat4::new(
-    1.0, 0.0, 0.0, 0.0,
-    0.0, 1.0, 0.0, 0.0,
-    0.0, 0.0, 0.5, 0.5,
-    0.0, 0.0, 0.0, 1.0,
-);
-
 /// The initial distance of the camer
-
 const INV_SQRT_3: f32 = 0.5773502691896258;
-
+/// Positions of the 8 octants of the sphere.
 const DIAGONAL_POSITIONS: [Vec3; 8] = [
     vector!(INV_SQRT_3, INV_SQRT_3, INV_SQRT_3),
     vector!(-INV_SQRT_3, INV_SQRT_3, INV_SQRT_3),
@@ -30,7 +35,9 @@ const DIAGONAL_POSITIONS: [Vec3; 8] = [
     vector!(-INV_SQRT_3, -INV_SQRT_3, -INV_SQRT_3),
     vector!(INV_SQRT_3, -INV_SQRT_3, -INV_SQRT_3),
 ];
-
+//}}}
+//{{{ col: Camera
+//{{{ struct: Camera
 /// Represents a camera in 3D space. This camera has a position, a focus, a pitch and yaw.
 /// The pitch and yaw angles, denoted $\phi$ and $\theta$ respectively,  are illustrated below.
 ///
@@ -60,7 +67,8 @@ pub struct Camera
     octant: i8,
 }
 //..................................................................................................
-
+//}}}
+//{{{ impl: Camera
 impl Camera
 {
     pub fn calc_matrix(&self) -> Mat4
@@ -143,7 +151,8 @@ impl Camera
         (self.focus - self.position).normalize()
     }
 }
-
+//}}}
+//{{{ impl: Default for Camera
 impl Default for Camera
 {
     fn default() -> Self
@@ -158,7 +167,10 @@ impl Default for Camera
     }
 }
 //..................................................................................................
-
+//}}}
+//}}}
+//{{{ col: Projection
+//{{{ struct: Projection
 #[derive(Debug)]
 pub struct Projection
 {
@@ -167,7 +179,8 @@ pub struct Projection
     far: f32,
     aspect: f32,
 }
-
+//}}}
+//{{{ impl: Projection
 impl Projection
 {
     pub fn calc_matrix(&self) -> Mat4
@@ -176,7 +189,8 @@ impl Projection
         // OPENGL_TO_WGPU_MATRIX * Mat4::new_perspective(self.aspect, self.fov, self.near, self.far)
     }
 }
-
+//}}}
+//{{{ impl: Default for Projection
 impl Default for Projection
 {
     fn default() -> Self
@@ -190,7 +204,10 @@ impl Default for Projection
     }
 }
 //..................................................................................................
-
+//}}}
+//}}}
+//{{{ col: ViewOptions
+//{{{ struct: ViewOptions
 /// This struct contains options for how the internal state of View changes in response to
 /// various events.
 #[derive(Debug)]
@@ -207,7 +224,8 @@ pub struct ViewOptions
     /// This is the sensitivety of the mouse wheel when moving forward and backward
     pub zoom_speed: f32,
 }
-
+//}}}
+//{{{ impl: Default for ViewOptions
 impl Default for ViewOptions
 {
     fn default() -> Self
@@ -219,11 +237,18 @@ impl Default for ViewOptions
         }
     }
 }
-
+//}}}
 //..................................................................................................
-
+//}}}
+//{{{ col: View
+//{{{ struct: View
+/// The `View` struct represents a 3D camera view, including the camera, projection, and uniform data.
+/// 
+/// The `options` field contains configuration options for how the camera view responds to user input.
+/// The `camera` field represents the position, orientation, and other properties of the camera.
+/// The `projection` field represents the projection parameters for the camera view.
+/// The `uniform` field contains data that is passed to the graphics shader as a uniform.
 #[derive(Default, Debug)]
-
 pub struct View
 {
     pub options: ViewOptions,
@@ -231,7 +256,8 @@ pub struct View
     projection: Projection,
     pub uniform: ViewUniform,
 }
-
+//}}}
+//{{{ impl: View
 impl View
 {
     fn calc_matrix(&self) -> Mat4
@@ -253,17 +279,20 @@ impl View
     }
 }
 //..................................................................................................
-
+//}}}
+//}}}
+//{{{ col: ViewUniform
+//{{{ struct: ViewUniform   
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Pod, Zeroable)]
-
 pub struct ViewUniform
 {
     view_position: [f32; 4],
     view_direction: [f32; 4],
     view_proj: [[f32; 4]; 4],
 }
-
+//}}}
+//{{{ impl: Default for ViewUniform
 impl Default for ViewUniform
 {
     fn default() -> Self
@@ -275,11 +304,13 @@ impl Default for ViewUniform
         }
     }
 }
-
 //..................................................................................................
-
+//}}}
+//}}}
+//{{{ impl: EventntController
 impl EventController
 {
+    //{{{ fun: update_view_3d
     pub fn update_view_3d(
         &mut self,
         view: &mut View,
@@ -296,42 +327,41 @@ impl EventController
         // handle key stroke to change octant of camera
         if self.key_stroke_state != KeyStrokeState::None
         {
-            if self.key_modifier_state.lshift_state() == ModifiersKeyState::Pressed ||
-               self.key_modifier_state.rshift_state() == ModifiersKeyState::Pressed
+            match (self.key_modifier_state)
             {
-                let old_octant = view.camera.octant;
-                let new_octant = octant_change(old_octant, self.key_stroke_state);
-                if new_octant != old_octant
-                {
-                    view.camera.set_octant(new_octant);
+                winit::keyboard::ModifiersState::SHIFT => {
+                    let old_octant = view.camera.octant;
+                    let new_octant = octant_change(old_octant, self.key_stroke_state);
+                    if new_octant != old_octant
+                    {
+                        view.camera.set_octant(new_octant);
+                    }
+                },
+                winit::keyboard::ModifiersState::ALT => {
+                    let delta_dir = view.options.key_pan_delta;
+                    let (del_x, del_y) = match self.key_stroke_state
+                    {
+                        KeyStrokeState::Left => (-delta_dir, 0.0),
+                        KeyStrokeState::Right => (delta_dir, 0.0),
+                        KeyStrokeState::Up => (0.0, delta_dir),
+                        KeyStrokeState::Down => (0.0, -delta_dir),
+                        _ => (0.0, 0.0),
+                    };
+                    view.camera.pan(del_x, del_y);
                 }
-            }
-            else if self.key_modifier_state.lalt_state() == ModifiersKeyState::Pressed ||
-                    self.key_modifier_state.ralt_state() == ModifiersKeyState::Pressed
-            {
-                let delta_dir = view.options.key_pan_delta;
-                let (del_x, del_y) = match self.key_stroke_state
-                {
-                    KeyStrokeState::Left => (-delta_dir, 0.0),
-                    KeyStrokeState::Right => (delta_dir, 0.0),
-                    KeyStrokeState::Up => (0.0, delta_dir),
-                    KeyStrokeState::Down => (0.0, -delta_dir),
-                    _ => (0.0, 0.0),
-                };
-                view.camera.pan(del_x, del_y);
-            }
-            else
-            {
-                let delta_angle = view.options.key_orbit_delta;
-                let (pitch_delta, yaw_delta) = match self.key_stroke_state
-                {
-                    KeyStrokeState::Left => (0.0, -delta_angle),
-                    KeyStrokeState::Right => (0.0, delta_angle),
-                    KeyStrokeState::Up => (delta_angle, 0.0),
-                    KeyStrokeState::Down => (-delta_angle, 0.0),
-                    _ => (0.0, 0.0),
-                };
-                view.camera.orbit(pitch_delta, yaw_delta);
+                _ => {
+                    let delta_angle = view.options.key_orbit_delta;
+                    let (pitch_delta, yaw_delta) = match self.key_stroke_state
+                    {
+                        KeyStrokeState::Left => (0.0, -delta_angle),
+                        KeyStrokeState::Right => (0.0, delta_angle),
+                        KeyStrokeState::Up => (delta_angle, 0.0),
+                        KeyStrokeState::Down => (-delta_angle, 0.0),
+                        _ => (0.0, 0.0),
+                    };
+                    view.camera.orbit(pitch_delta, yaw_delta);
+                }
+
             }
             self.key_stroke_state = KeyStrokeState::None;
         }
@@ -345,8 +375,10 @@ impl EventController
 
         view.update_uniform();
     }
+    //}}}
 }
-
+//}}}
+//{{{ fun: octant_change
 fn octant_change(
     octant: i8,
     key_stroke_state: KeyStrokeState,
@@ -403,14 +435,15 @@ fn octant_change(
 
     octant_out
 }
-
 //..................................................................................................
+//}}}
 
+//-------------------------------------------------------------------------------------------------
+//{{{ mod: tests
 #[cfg(test)]
-
 mod tests
 {
-
+  
     use nalgebra::vector;
     use winit::event::ElementState;
 
@@ -509,6 +542,7 @@ mod tests
         }
     }
 
+    //{{{ test: left_key_stroke_test
     #[test]
     fn left_key_stroke_test()
     {
@@ -520,7 +554,7 @@ mod tests
 
         let mut view_controller = EventController::default();
 
-        view_controller.key_modifiers_update(winit::keyboard::ModifiersState::SHIFT.into());
+        view_controller.key_modifiers_update(winit::keyboard::ModifiersState::SHIFT);
 
         assert_eq!(view.camera.octant, 0);
         view_controller.key_input_update(state, key);
@@ -545,4 +579,6 @@ mod tests
         view_controller.update_view_3d(&mut view);
         assert_eq!(view.camera.octant, 1);
     }
+    //}}}
 }
+//}}}

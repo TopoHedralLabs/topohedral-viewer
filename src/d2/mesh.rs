@@ -106,6 +106,7 @@ pub trait Mesh2D<'a>
 //{{{ impl: Mesh2D for Mesh
 impl<'a> Mesh2D<'a> for Mesh<'a>
 {
+    //{{{ fun: create_axes
     fn create_axes(
         axes: &AxesDescriptor,
     ) -> Self
@@ -120,7 +121,8 @@ impl<'a> Mesh2D<'a> for Mesh<'a>
         mesh
 
     }
-
+    //}}}
+    //{{{ fun: create_square
     /// Creates a 2D square mesh based on the provided `SquareDescriptor`.
     ///
     /// The `create_square` function takes a `SquareDescriptor` as input and returns a new `Mesh2D` instance. The function handles two cases:
@@ -181,14 +183,16 @@ impl<'a> Mesh2D<'a> for Mesh<'a>
 
 
     }
-
+    //}}}
+    //{{{ fun: create_circle
     fn create_circle(
         circle: &CircleDescriptor,
     ) -> Self
     {
         todo!()
     }
-
+    //}}}
+    //{{{ fun: add_line
     fn add_line(
         &mut self,
         v1: &Vec2,
@@ -214,7 +218,8 @@ impl<'a> Mesh2D<'a> for Mesh<'a>
             triangle_color: *tri_color,
         }));
     }
-
+    //}}}
+    //{{{ fun: add_triangle
     fn add_triangle(
         &mut self,
         v1: &Vec2,
@@ -245,6 +250,7 @@ impl<'a> Mesh2D<'a> for Mesh<'a>
             triangle_color: *tri_color,
         }));
     }
+    //}}}
 }
 //..................................................................................................
 //}}}

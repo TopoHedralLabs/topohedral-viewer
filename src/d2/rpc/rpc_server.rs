@@ -12,6 +12,7 @@ use super::super::mesh::AxesDescriptor;
 use super::super::state::{State, State2D};
 use crate::common::Vec2;
 
+//{{{ impl: AddAxesRequest
 impl d2rpc::AddAxesRequest
 {
     pub fn is_valid(&self) -> bool
@@ -34,7 +35,8 @@ impl d2rpc::AddAxesRequest
         is_val
     }
 }
-
+//}}}
+//{{{ impl: From<d2rpc::Vec2> for Vec2
 impl From<d2rpc::Vec2> for Vec2
 {
     fn from(v: d2rpc::Vec2) -> Self
@@ -42,13 +44,15 @@ impl From<d2rpc::Vec2> for Vec2
         Vec2::new(v.x, v.y)
     }
 }
-
+//}}}
+//{{{ struct: StateServer
 pub struct StateServer
 {
     state: Arc<Mutex<State<'static>>>,
     shutdown_sender: mpsc::Sender<()>,
 }
-
+//}}}
+//{{{ trait StateService for StateServer
 #[tonic::async_trait]
 impl d2rpc::state_service_server::StateService for StateServer
 {
@@ -111,7 +115,8 @@ impl d2rpc::state_service_server::StateService for StateServer
         Ok(Response::new(d2rpc::KillServerResponse {}))
     }
 }
-
+//}}}
+//{{{ fun: run_server
 pub async fn run_server(
     state: Arc<Mutex<State<'static>>>,
     rpc_address: SocketAddr,
@@ -142,3 +147,4 @@ pub async fn run_server(
         error!("Server error: {}", e);
     }
 }
+//}}}
