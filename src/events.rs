@@ -87,7 +87,7 @@ pub struct EventController
     pub mouse_position: [f32; 2],
     pub mouse_position_delta: [f32; 2],
     pub mouse_wheel_delta: Option<f32>,
-    pub key_modifier_state: winit::event::Modifiers,
+    pub key_modifier_state: winit::keyboard::ModifiersState,
     pub resized_state: ResizedState,
     pub key_stroke_state: KeyStrokeState,
 }
@@ -191,7 +191,7 @@ impl EventController
 
     pub fn key_modifiers_update(
         &mut self,
-        modifiers: winit::event::Modifiers,
+        modifiers: winit::keyboard::ModifiersState,
     )
     {
         self.key_modifier_state = modifiers;
