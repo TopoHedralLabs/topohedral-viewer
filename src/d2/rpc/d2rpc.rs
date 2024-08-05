@@ -62,6 +62,50 @@ pub struct SquareDescriptor {
     pub line_color: ::core::option::Option<Color>,
     #[prost(message, optional, tag = "7")]
     pub tri_color: ::core::option::Option<Color>,
+    #[prost(enumeration = "CellType", tag = "8")]
+    pub cell_type: i32,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct AddSquareRequest {
+    #[prost(string, tag = "1")]
+    pub client_name: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub square_descriptor: ::core::option::Option<SquareDescriptor>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct AddSquareResponse {
+    #[prost(uint64, tag = "1")]
+    pub square_id: u64,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CirlceDescriptor {
+    #[prost(message, optional, tag = "1")]
+    pub center: ::core::option::Option<Vec2>,
+    #[prost(float, tag = "2")]
+    pub radius: f32,
+    #[prost(message, optional, tag = "3")]
+    pub line_color: ::core::option::Option<Color>,
+    #[prost(message, optional, tag = "4")]
+    pub tri_color: ::core::option::Option<Color>,
+    #[prost(enumeration = "CellType", tag = "5")]
+    pub cell_type: i32,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct AddCircleRequest {
+    #[prost(string, tag = "1")]
+    pub client_name: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub circle_descriptor: ::core::option::Option<CirlceDescriptor>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct AddCircleResponse {
+    #[prost(uint64, tag = "1")]
+    pub circle_id: u64,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -72,6 +116,35 @@ pub struct KillServerRequest {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct KillServerResponse {}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum CellType {
+    None = 0,
+    Line = 1,
+    Triangle = 2,
+}
+impl CellType {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            CellType::None => "NONE",
+            CellType::Line => "LINE",
+            CellType::Triangle => "TRIANGLE",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "NONE" => Some(Self::None),
+            "LINE" => Some(Self::Line),
+            "TRIANGLE" => Some(Self::Triangle),
+            _ => None,
+        }
+    }
+}
 /// Generated client implementations.
 pub mod state_service_client {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
@@ -182,6 +255,56 @@ pub mod state_service_client {
                 .insert(GrpcMethod::new("d2rpc.StateService", "AddAxes"));
             self.inner.unary(req, path, codec).await
         }
+        pub async fn add_square(
+            &mut self,
+            request: impl tonic::IntoRequest<super::AddSquareRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::AddSquareResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/d2rpc.StateService/AddSquare",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("d2rpc.StateService", "AddSquare"));
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn add_circle(
+            &mut self,
+            request: impl tonic::IntoRequest<super::AddCircleRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::AddCircleResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/d2rpc.StateService/AddCircle",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("d2rpc.StateService", "AddCircle"));
+            self.inner.unary(req, path, codec).await
+        }
         pub async fn kill_server(
             &mut self,
             request: impl tonic::IntoRequest<super::KillServerRequest>,
@@ -220,6 +343,20 @@ pub mod state_service_server {
             &self,
             request: tonic::Request<super::AddAxesRequest>,
         ) -> std::result::Result<tonic::Response<super::AddAxesResponse>, tonic::Status>;
+        async fn add_square(
+            &self,
+            request: tonic::Request<super::AddSquareRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::AddSquareResponse>,
+            tonic::Status,
+        >;
+        async fn add_circle(
+            &self,
+            request: tonic::Request<super::AddCircleRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::AddCircleResponse>,
+            tonic::Status,
+        >;
         async fn kill_server(
             &self,
             request: tonic::Request<super::KillServerRequest>,
@@ -338,6 +475,98 @@ pub mod state_service_server {
                     let fut = async move {
                         let inner = inner.0;
                         let method = AddAxesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/d2rpc.StateService/AddSquare" => {
+                    #[allow(non_camel_case_types)]
+                    struct AddSquareSvc<T: StateService>(pub Arc<T>);
+                    impl<
+                        T: StateService,
+                    > tonic::server::UnaryService<super::AddSquareRequest>
+                    for AddSquareSvc<T> {
+                        type Response = super::AddSquareResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::AddSquareRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StateService>::add_square(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = AddSquareSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/d2rpc.StateService/AddCircle" => {
+                    #[allow(non_camel_case_types)]
+                    struct AddCircleSvc<T: StateService>(pub Arc<T>);
+                    impl<
+                        T: StateService,
+                    > tonic::server::UnaryService<super::AddCircleRequest>
+                    for AddCircleSvc<T> {
+                        type Response = super::AddCircleResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::AddCircleRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StateService>::add_circle(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = AddCircleSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(

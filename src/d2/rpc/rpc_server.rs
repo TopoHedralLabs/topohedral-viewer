@@ -1,16 +1,30 @@
-//.................................. std
+//! Implements the server-side computation for the TopoHedralViewer RPC server running in 2D mode.
+//!
+//! The general process for handling requests to add geometry is we:
+//! - Receive the request 
+//! - Validate the inputs
+//! - If valid we offload to the corresponding operation on the state object (i.e. adding meshes, 
+//!   removing meshes etc)
+//! 
+//! 
+//--------------------------------------------------------------------------------------------------
+
+//{{{ crate imports 
+use super::d2rpc;
+use super::super::mesh::{AxesDescriptor, SquareDescriptor, CircleDescriptor};
+use super::super::state::{State, State2D};
+use crate::common::Vec2;
+//}}}
+//{{{ std imports 
 use core::net::SocketAddr;
 use std::sync::{Arc, Mutex};
-//.................................. 3rd party
+//}}}
+//{{{ dep imports 
 use log::{error, info};
 use tokio::sync::mpsc;
 use tonic::{transport::Server, Request, Response, Status};
-//.................................. crate
-use super::d2rpc;
-
-use super::super::mesh::AxesDescriptor;
-use super::super::state::{State, State2D};
-use crate::common::Vec2;
+//}}}
+//--------------------------------------------------------------------------------------------------
 
 //{{{ impl: AddAxesRequest
 impl d2rpc::AddAxesRequest
@@ -91,6 +105,24 @@ impl d2rpc::state_service_server::StateService for StateServer
         }
         out
     }
+
+    async fn add_square(
+        &self,
+        request: Request<d2rpc::AddSquareRequest>,
+    ) -> Result<Response<d2rpc::AddSquareResponse>, Status>
+    {
+        let addr = request.remote_addr();
+        let msg = request.into_inner();
+    }
+
+    async fn add_circle(
+        &self,
+        request: Request<d2rpc::AddCircleRequest>,
+    ) -> Result<Response<d2rpc::AddCircleResponse>, Status>
+    {
+        let addr = request.remote_addr();
+        let msg = request.into_inner();
+    }   
 
     async fn kill_server(
         &self,

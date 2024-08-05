@@ -10,13 +10,20 @@ message Color
     float g = 2;
     float b = 3;
 }
-
+//..................................................................................................
 
 message Vec2 {
     float x = 1;
     float y = 2;
 }
-// .................................................................................................
+//..................................................................................................
+
+enum CellType {
+    NONE = 0;
+    LINE = 1;
+    TRIANGLE = 2;
+}
+//..................................................................................................
 
 message AxesDescriptor {
     Vec2 origin = 1;
@@ -44,9 +51,35 @@ message SquareDescriptor {
     float leny = 5;
     Color line_color = 6;
     Color tri_color = 7;
+    CellType cell_type = 8;
+}
 
+message AddSquareRequest {
+    string client_name = 1;
+    SquareDescriptor square_descriptor = 2;
+}
+
+message AddSquareResponse {
+    uint64 square_id = 1;
 }
 // .................................................................................................
+
+message CirlceDescriptor {
+    Vec2 center = 1;
+    float radius = 2;
+    Color line_color = 3;
+    Color tri_color = 4;   
+    CellType cell_type = 5;
+}
+
+message AddCircleRequest {
+    string client_name = 1;
+    CirlceDescriptor circle_descriptor = 2;
+}  
+
+message AddCircleResponse {
+    uint64 circle_id = 1;
+}
 
 message KillServerRequest {
     string client_name = 1;
@@ -57,5 +90,7 @@ message KillServerResponse {}
 
 service StateService {
     rpc AddAxes(AddAxesRequest) returns (AddAxesResponse);
+    rpc AddSquare(AddSquareRequest) returns (AddSquareResponse);
+    rpc AddCircle(AddCircleRequest) returns (AddCircleResponse);
     rpc KillServer(KillServerRequest) returns (KillServerResponse);
 }
