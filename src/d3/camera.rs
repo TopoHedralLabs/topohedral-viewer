@@ -495,10 +495,7 @@ mod tests
     fn camera_calc_matrix_test()
     {
         let view = build_view();
-
         let mat = view.camera.calc_matrix();
-
-        eprintln!("\n{}", mat);
     }
 
     #[test]
@@ -514,7 +511,6 @@ mod tests
 
         let mat = proj.calc_matrix();
 
-        eprintln!("\n{}", mat);
     }
 
     #[test]
@@ -528,17 +524,14 @@ mod tests
         {
             let p1 = vector![0.0, 0.0, 0.0, 1.0];
             let p2 = view_mat * p1;
-            eprintln!("---------------------------\n{}", p2);
         }
         {
             let p1 = vector![1.0, 0.0, 0.0, 1.0];
             let p2 = view_mat * p1;
-            eprintln!("---------------------------\n{}", p2);
         }
         {
             let p1 = vector![0.0, 1.0, 0.0, 1.0];
             let p2 = view_mat * p1;
-            eprintln!("---------------------------\n{}", p2);
         }
     }
 

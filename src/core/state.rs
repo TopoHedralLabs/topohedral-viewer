@@ -741,6 +741,7 @@ where
             // ----------------------------------- Mouse Wheel
             WindowEvent::MouseWheel { delta, .. } if self.has_window(window_id) =>
             {
+                log::debug!("Mouse wheel: {:?}", delta);
                 self.view_state.view_controller().mouse_wheel_update(*delta);
 
                 self.window_request_redraw();
@@ -748,6 +749,7 @@ where
             // ---------------------------------- Mouse click
             WindowEvent::MouseInput { state, button, .. }if self.has_window(window_id) =>
             {
+                log::debug!("Mouse input: {:?} {:?}", state, button);
                 self.view_state
                     .view_controller()
                     .mouse_input_update(*state, *button);
@@ -764,6 +766,7 @@ where
             // ---------------------------------- Keyboard input
             WindowEvent::KeyboardInput { event, .. } if self.has_window(window_id) =>
             {
+                log::debug!("Keyboard input: {:?}", event);
                 match event.logical_key
                 {
                     winit::keyboard::Key::Named(key) =>
@@ -781,12 +784,14 @@ where
             // ---------------------------------- Key modifiers changed
             WindowEvent::ModifiersChanged(ev) if self.has_window(window_id) =>
             {
+                log::debug!("Modifiers changed: {:?}", ev);
                 self.view_state.view_controller().key_modifiers_update(ev.state());
                 self.window_request_redraw();
             }
             // ---------------------------------- Window resized
             WindowEvent::Resized(size) if self.has_window(window_id) =>
             {
+                log::debug!("Window resized: {:?}", size);
                 self.view_state.view_controller().resize_update(*size);
                 self.wgpu_state
                     .as_mut()
@@ -797,6 +802,7 @@ where
             // ---------------------------------- Redraw Requested
             WindowEvent::RedrawRequested if self.has_window(window_id) =>
             {
+                log::debug!("Redraw requested");
                 self.view_state.update();
                 self.wgpu_state
                     .as_mut()
@@ -817,44 +823,6 @@ where
         }
     }
     //..............................................................
-
-    pub fn handle_input_string(
-        &mut self,
-        input: &String,
-        tx: &mpsc::Sender<String>,
-    )
-    {
-        if let Some(first_char) = input.trim().chars().next()
-        {
-            match first_char
-            {
-                '{' =>
-                {
-                    // case: may be a json-rpc command
-                    if let Ok(json_rpc_command) = serde_json::from_str::<serde_json::Value>(input)
-                    {
-                        //eprintln!("Found json rpc command")
-                    }
-                    else
-                    {
-                        // case: may be python command
-                        if let Err(e) = tx.send(input.clone())
-                        {
-                            //eprintln!("Cannot send python command to channel: {e}");
-                        }
-                    }
-                }
-                _ =>
-                {
-                    // case: may be python command
-                    if let Err(e) = tx.send(input.clone())
-                    {
-                        //eprintln!("Cannot send python command to channel:{e}");
-                    }
-                }
-            }
-        }
-    }
 
     pub fn has_window(
         &mut self,

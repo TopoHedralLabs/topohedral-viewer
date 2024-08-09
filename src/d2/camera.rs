@@ -1,15 +1,21 @@
-//!  Camera in 2D scene 
+//! Implements the Camera functionality for a 2D scene.
 //!
-//! 
+//! Includes functions for updating the camera's position, rotation, and zoom level.
 //--------------------------------------------------------------------------------------------------
 
-use bytemuck::{Pod, Zeroable};
-use winit::keyboard::ModifiersKeyState;
-
-
+//{{{ crate imports 
 use crate::common::*;
 use crate::events::*;
+//}}}
+//{{{ std imports 
+//}}}
+//{{{ dep imports 
+use bytemuck::{Pod, Zeroable};
+//}}}
+//--------------------------------------------------------------------------------------------------
 
+//{{{ collection: Camera
+//{{{ struct: Camera
 /// Represents a cameral in a 2D scene. 
 /// 
 /// This camera has a 2D position, rotation, and zoom level.
@@ -26,7 +32,9 @@ pub struct Camera
     x_axis: Vec2,
     y_axis: Vec2,
 }
-
+//..................................................................................................
+//}}}
+//{{{ impl: Camera
 impl Camera 
 {
     pub fn zoom(
@@ -55,7 +63,9 @@ impl Camera
     }
 
 }
-
+//..................................................................................................
+//}}}
+//{{{ impl Default for Camera
 impl Default for Camera
 {
     fn default() -> Self {
@@ -69,8 +79,10 @@ impl Default for Camera
     }
 }
 //..................................................................................................
-
-
+//}}}
+//}}}
+//{{{ collection: ViewOptions
+//{{{ struct: ViewOptions
 /// Short Description
 ///
 /// Longer Description
@@ -89,7 +101,8 @@ pub struct ViewOptions
     pub zoom_speed: f32,
    
 }
-
+//}}}
+//{{{ impl Default for ViewOptions
 impl Default for ViewOptions
 {
     fn default() -> Self
@@ -97,13 +110,15 @@ impl Default for ViewOptions
         Self {
             key_pan_delta: 0.5,
             rotate_delta: rad(2.5),
-            zoom_speed: 0.001,
+            zoom_speed: 0.1,
         }
     }
 }
 //..................................................................................................
-
-
+//}}}
+//}}}
+//{{{ collection: View
+//{{{ struct: View
 /// Short Description
 ///
 /// Longer Description
@@ -114,7 +129,8 @@ pub struct View
     pub uniform: ViewUniform,   
     camera: Camera, 
 }
-
+//}}}
+//{{{ impl: View
 impl View 
 {
     pub fn update_uniform(&mut self)
@@ -138,7 +154,8 @@ impl View
         self.uniform.view_matrix = view_matrix.into();
     }
 }
-
+//}}}
+//{{{ impl Default for View
 impl Default for View
 {
     fn default() -> Self {
@@ -150,7 +167,9 @@ impl Default for View
     }
 }
 //..................................................................................................
-
+//}}}
+//}}}
+//{{{ struct: ViewUniform
 /// Short Description
 ///
 /// Longer Description
@@ -175,8 +194,8 @@ impl Default for ViewUniform
     }
 }
 //..................................................................................................
-
-
+//}}}
+//{{{ impl: EventController
 impl EventController
 {
     pub fn update_view_2d(&mut self, view: &mut View)
@@ -203,7 +222,6 @@ impl EventController
             }
             else
             {
-                eprintln!("Translate");
                 let displ = match self.key_stroke_state
                 {
                     KeyStrokeState::Left => -view.options.key_pan_delta * view.camera.x_axis,
@@ -212,7 +230,6 @@ impl EventController
                     KeyStrokeState::Down =>  -view.options.key_pan_delta * view.camera.y_axis,
                     _ => Vec2::zeros(),
                 };
-                eprintln!("displ: {:?}", displ);
                 view.camera.pan(displ[0], displ[1]);
             }
             self.key_stroke_state = KeyStrokeState::None;
@@ -229,4 +246,5 @@ impl EventController
     }
 }
 //..................................................................................................
+//}}}
 

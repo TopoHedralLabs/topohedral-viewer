@@ -25,6 +25,11 @@ enum CellType {
 }
 //..................................................................................................
 
+message AddItemResponse {
+    uint64 id = 1;
+}
+//..................................................................................................
+
 message AxesDescriptor {
     Vec2 origin = 1;
     Vec2 x_axis = 2;
@@ -36,10 +41,6 @@ message AxesDescriptor {
 message AddAxesRequest {
     string client_name = 1;
     AxesDescriptor axes_descriptor = 2;
-}
-
-message AddAxesResponse {
-    uint64 axes_id = 1;
 }
 // .................................................................................................
 
@@ -58,10 +59,6 @@ message AddSquareRequest {
     string client_name = 1;
     SquareDescriptor square_descriptor = 2;
 }
-
-message AddSquareResponse {
-    uint64 square_id = 1;
-}
 // .................................................................................................
 
 message CirlceDescriptor {
@@ -76,10 +73,7 @@ message AddCircleRequest {
     string client_name = 1;
     CirlceDescriptor circle_descriptor = 2;
 }  
-
-message AddCircleResponse {
-    uint64 circle_id = 1;
-}
+// .................................................................................................
 
 message KillServerRequest {
     string client_name = 1;
@@ -89,8 +83,8 @@ message KillServerResponse {}
 // .................................................................................................
 
 service StateService {
-    rpc AddAxes(AddAxesRequest) returns (AddAxesResponse);
-    rpc AddSquare(AddSquareRequest) returns (AddSquareResponse);
-    rpc AddCircle(AddCircleRequest) returns (AddCircleResponse);
+    rpc AddAxes(AddAxesRequest) returns (AddItemResponse);
+    rpc AddSquare(AddSquareRequest) returns (AddItemResponse);
+    rpc AddCircle(AddCircleRequest) returns (AddItemResponse);
     rpc KillServer(KillServerRequest) returns (KillServerResponse);
 }

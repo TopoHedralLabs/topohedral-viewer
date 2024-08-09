@@ -19,6 +19,12 @@ pub struct Vec2 {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct AddItemResponse {
+    #[prost(uint64, tag = "1")]
+    pub id: u64,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct AxesDescriptor {
     #[prost(message, optional, tag = "1")]
     pub origin: ::core::option::Option<Vec2>,
@@ -38,12 +44,6 @@ pub struct AddAxesRequest {
     pub client_name: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "2")]
     pub axes_descriptor: ::core::option::Option<AxesDescriptor>,
-}
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct AddAxesResponse {
-    #[prost(uint64, tag = "1")]
-    pub axes_id: u64,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -75,12 +75,6 @@ pub struct AddSquareRequest {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct AddSquareResponse {
-    #[prost(uint64, tag = "1")]
-    pub square_id: u64,
-}
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CirlceDescriptor {
     #[prost(message, optional, tag = "1")]
     pub center: ::core::option::Option<Vec2>,
@@ -100,12 +94,6 @@ pub struct AddCircleRequest {
     pub client_name: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "2")]
     pub circle_descriptor: ::core::option::Option<CirlceDescriptor>,
-}
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct AddCircleResponse {
-    #[prost(uint64, tag = "1")]
-    pub circle_id: u64,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -234,7 +222,7 @@ pub mod state_service_client {
             &mut self,
             request: impl tonic::IntoRequest<super::AddAxesRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::AddAxesResponse>,
+            tonic::Response<super::AddItemResponse>,
             tonic::Status,
         > {
             self.inner
@@ -259,7 +247,7 @@ pub mod state_service_client {
             &mut self,
             request: impl tonic::IntoRequest<super::AddSquareRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::AddSquareResponse>,
+            tonic::Response<super::AddItemResponse>,
             tonic::Status,
         > {
             self.inner
@@ -284,7 +272,7 @@ pub mod state_service_client {
             &mut self,
             request: impl tonic::IntoRequest<super::AddCircleRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::AddCircleResponse>,
+            tonic::Response<super::AddItemResponse>,
             tonic::Status,
         > {
             self.inner
@@ -342,21 +330,15 @@ pub mod state_service_server {
         async fn add_axes(
             &self,
             request: tonic::Request<super::AddAxesRequest>,
-        ) -> std::result::Result<tonic::Response<super::AddAxesResponse>, tonic::Status>;
+        ) -> std::result::Result<tonic::Response<super::AddItemResponse>, tonic::Status>;
         async fn add_square(
             &self,
             request: tonic::Request<super::AddSquareRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::AddSquareResponse>,
-            tonic::Status,
-        >;
+        ) -> std::result::Result<tonic::Response<super::AddItemResponse>, tonic::Status>;
         async fn add_circle(
             &self,
             request: tonic::Request<super::AddCircleRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::AddCircleResponse>,
-            tonic::Status,
-        >;
+        ) -> std::result::Result<tonic::Response<super::AddItemResponse>, tonic::Status>;
         async fn kill_server(
             &self,
             request: tonic::Request<super::KillServerRequest>,
@@ -451,7 +433,7 @@ pub mod state_service_server {
                         T: StateService,
                     > tonic::server::UnaryService<super::AddAxesRequest>
                     for AddAxesSvc<T> {
-                        type Response = super::AddAxesResponse;
+                        type Response = super::AddItemResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
@@ -497,7 +479,7 @@ pub mod state_service_server {
                         T: StateService,
                     > tonic::server::UnaryService<super::AddSquareRequest>
                     for AddSquareSvc<T> {
-                        type Response = super::AddSquareResponse;
+                        type Response = super::AddItemResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
@@ -543,7 +525,7 @@ pub mod state_service_server {
                         T: StateService,
                     > tonic::server::UnaryService<super::AddCircleRequest>
                     for AddCircleSvc<T> {
-                        type Response = super::AddCircleResponse;
+                        type Response = super::AddItemResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,

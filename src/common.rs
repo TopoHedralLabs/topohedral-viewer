@@ -335,12 +335,7 @@ mod test
         for dir in dirs
         {
             let (pitch, yaw) = pitch_and_yaw(&dir);
-
             let dir2 = direction(pitch, yaw);
-            // pitch  = pitch * (180.0f32 / PI);
-            // yaw = yaw * (180.0f32 / PI);
-            // eprintln!("-------------------------------------------------------");
-            // eprintln!("dir = {dir}\npitch = {pitch} yaw = {yaw}\ndir2 = {dir2}");
         }
     }
 
@@ -415,25 +410,21 @@ mod test
         {
             let v1 = Vec3::new(1.0, 1.0, 1.0);
             let v2 = orthogonal_vector(&v1);
-            eprintln!("v2 = {v2}");
             assert!(v1.dot(&v2) < 1e-8)
         }
         {
             let v1 = Vec3::new(1.0, 0.0, 0.0);
             let v2 = orthogonal_vector(&v1);
-            eprintln!("v2 = {v2}");
             assert!(v1.dot(&v2) < 1e-8)
         }
         {
             let v1 = Vec3::new(0.0, 1.0, 0.0);
             let v2 = orthogonal_vector(&v1);
-            eprintln!("v2 = {v2}");
             assert!(v1.dot(&v2) < 1e-8)
         }
         {
             let v1 = Vec3::new(0.0, 0.0, 1.0);
             let v2 = orthogonal_vector(&v1);
-            eprintln!("v2 = {v2}");
             assert!(v1.dot(&v2) < 1e-8)
         }
     }
