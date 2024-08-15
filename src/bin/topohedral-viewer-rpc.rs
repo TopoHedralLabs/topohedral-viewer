@@ -1,18 +1,26 @@
-//.................................. std
-//.................................. 3rd party
-use env_logger;
-use log::info;
+//! This executable is the topohedral-viewer-rpc. It is a command line tool that
+//!
+//! Longer description of module
+//--------------------------------------------------------------------------------------------------
 
+//{{{ crate imports 
+use topohedral_viewer::app::{run_topoviewer, TopoViewerOptions};
+//}}}
+//{{{ std imports 
+//}}}
+//{{{ dep imports 
 use clap::Parser;
-//.................................. crate
-use topohedral_viewer::app::{run_topoviewer, TopoViewerOptions, Mode, RPCOption};
-
+use topohedral_tracing::{topo_log, init, info};
+//}}}
+//--------------------------------------------------------------------------------------------------
 
 
 fn main()
 {
-    env_logger::init();
+    init().unwrap();
     let opts = TopoViewerOptions::parse();
+    //{{{ trace
     info!("Starting TopoViewer with options {}", opts);
+    //}}}
     run_topoviewer(&opts);
 }

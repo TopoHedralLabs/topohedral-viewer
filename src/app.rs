@@ -25,10 +25,9 @@ use winit::{
 use tokio::runtime::{Handle, Runtime};
 use tokio::task;
 use tokio::{runtime, sync::mpsc};
-
-use log::{error, info};
-
 use clap::{Args, Parser, Subcommand, ValueEnum};
+
+use topohedral_tracing::*;
 //}}}
 //--------------------------------------------------------------------------------------------------
 
@@ -159,29 +158,53 @@ impl<'a> TopoViewer<'a>
     /// The TopoViewer instance.
     pub fn new(topoviewer_options: &TopoViewerOptions) -> Self
     {
+        //{{{ trace: enter
+        info!("Initialising TopoViewer with options {}", topoviewer_options);
+        //}}}
+
         let state_2d = match topoviewer_options.mode
         {
-            Mode::D2 => Some(d2::State::new_arc_mutex()),
+            Mode::D2 => {
+                //{{{ trace
+                info!("Creating  2D state");
+                //}}}
+                Some(d2::State::new_arc_mutex())
+            },
             Mode::D3 => None,
         };
 
         let state_3d = match topoviewer_options.mode
         {
             Mode::D2 => None,
-            Mode::D3 => Some(d3::State::new_arc_mutex()),
+            Mode::D3 => {
+                //{{{ trace
+                info!("Creating 3D state");
+                //}}}
+                Some(d3::State::new_arc_mutex())
+            },
         };
 
         let tokio_runtime = match topoviewer_options.with_rpc
         {
-            RPCOption::None => runtime::Builder::new_current_thread()
-                .enable_all()
-                .build()
-                .unwrap(),
-            RPCOption::WithPort { port: _ } => runtime::Builder::new_multi_thread()
-                .worker_threads(2)
-                .enable_all()
-                .build()
-                .unwrap(),
+            RPCOption::None =>  {
+                //{{{ trace
+                info!("Building single-threaded tokio runtime");
+                //}}}
+                runtime::Builder::new_current_thread()
+                    .enable_all()
+                    .build()
+                    .unwrap()
+            },
+            RPCOption::WithPort { port: _ } =>  {
+                //{{{ trace
+                info!("Building multi-threaded tokio runtime");
+                //}}}
+                runtime::Builder::new_multi_thread()
+                    .worker_threads(2)
+                    .enable_all()
+                    .build()
+                    .unwrap()
+            },
         };
 
         TopoViewer {
@@ -307,9 +330,12 @@ impl ApplicationHandler<TopoHedralEvent> for TopoViewer<'static>
         event_loop: &winit::event_loop::ActiveEventLoop,
     )
     {
+        //{{{ trace
         info!("Resumed application");
+        //}}}
         match self.mode
         {
+            //{{{ case: 2D
             Mode::D2 =>
             {
                 if let Some(state) = self.state_2d.clone()
@@ -327,14 +353,20 @@ impl ApplicationHandler<TopoHedralEvent> for TopoViewer<'static>
 
                         self.tokio_runtime.spawn(async move {
                             tokio::signal::ctrl_c().await.unwrap();
+                            //{{{ trace
                             info!("Received a Ctrl-C signal");
+                            info!("Sending shutdown signal");
+                            //}}}
                             shutdown_sender_clone.send(()).await.unwrap();
                         });
-
+                        //{{{ trace
                         info!("Launching RPC server with socket: {}", socket);
-
+                        //}}}
 
                         let handle = self.tokio_runtime.spawn(async move {
+                            //{{{ trace
+                            info!("Launching RPC server");
+                            //}}}
                             d2::run_server(state_clone, socket, shutdown_sender, shutdown_receiver)
                                 .await
                         });
@@ -345,8 +377,11 @@ impl ApplicationHandler<TopoHedralEvent> for TopoViewer<'static>
                         .block_on(state.lock().unwrap().launch_window(event_loop));
                 }
             }
+            //}}}
+            //{{{ case: 3D
             Mode::D3 =>
             {}
+            //}}}
         }
     }
     //}}}
@@ -360,18 +395,26 @@ impl ApplicationHandler<TopoHedralEvent> for TopoViewer<'static>
     {
         match event
         {
+            //{{{ case: CloseRequested
             WindowEvent::CloseRequested =>
             {
+                //{{{ trace
                 info!("Close requested");
-
+                //}}}
                 if let Some(shutdown_sender) = self.shutdown_sender.as_ref()
                 {
+                    //{{{ trace
                     info!("Shutting down RPC server");
+                    //}}}
                     self.tokio_runtime.block_on(shutdown_sender.send(())).unwrap();
                 }
+                //{{{ trace
                 info!("Exiting Application");
+                //}}}
                 event_loop.exit();
             }
+            //}}}
+            //{{{ default
             _ => match self.mode
             {
                 Mode::D2 =>
@@ -389,16 +432,23 @@ impl ApplicationHandler<TopoHedralEvent> for TopoViewer<'static>
                     }
                 }
             },
+            //}}}
         }
 
         match self.server_status()
         {
+            //{{{ case: Stopped
             RcpStatus::Stopped =>
             {
+                //{{{ trace
                 info!("RPC server is stopped, closing 2D window");
+                //}}}
                 event_loop.exit();
             }
+            //}}}
+            //{{{ default
             _ => {},
+            //}}}
         }
     }
     //}}}
@@ -408,7 +458,9 @@ impl ApplicationHandler<TopoHedralEvent> for TopoViewer<'static>
         {
             TopoHedralEvent::RcpShutdown =>
             {
+                //{{{ trace
                 info!("Received RPC shutdown event, exiting application");
+                //}}}
                 event_loop.exit();
             }
         }
@@ -427,9 +479,10 @@ enum TopoHedralEvent
 //{{{ fun: run_topoviewer
 pub fn run_topoviewer(topoviewer_options: &TopoViewerOptions)
 {
-    // initialize the winit event loop
+    //{{{ trace
     info!("Initializing winit event loop");
-    // let event_loop = EventLoop::new().unwrap();
+    //}}}
+    // initialize the winit event loop
     let event_loop = EventLoop::<TopoHedralEvent>::with_user_event().build().expect("Failed to create winit event loop");
     event_loop.set_control_flow(ControlFlow::Wait);
     let mut app = TopoViewer::new(topoviewer_options);
