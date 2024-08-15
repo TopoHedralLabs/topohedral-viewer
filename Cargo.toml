@@ -3,6 +3,8 @@ name = "topohedral-viewer"
 version = "0.0.0"
 edition = "2021"
 
+[features]
+enable_trace = ["topohedral-tracing/enable_trace"]
 
 [dependencies]
 bytemuck = {version = "1.16.0", features = ["derive"]}
@@ -19,7 +21,7 @@ prost = "0.12"
 clap = { version = "4.5.7", features = ["derive"] }
 tokio-stream = "0.1.15"
 log = "0.4.21"
-env_logger = "0.11.3"
+topohedral-tracing = {path = "../topohedral-tracing"}
 
 
 [build-dependencies]
