@@ -1,27 +1,265 @@
-//.................................. std
-use std::collections::HashMap;
-use std::sync::{mpsc, Arc, Mutex};
+//! This module contains the state of the application which is shared between the 2D and 3D viewers.
+//!
+//! This includes handling of events, rendering, and other shared functionality.
+//--------------------------------------------------------------------------------------------------
 
-//.................................. 3rd party
-use serde::{Deserialize, Serialize};
-use wgpu::{self, util::DeviceExt, Device, Features};
-use winit::event::Event;
-use winit::window::Window;
-use winit::{self, event::WindowEvent, event_loop::ActiveEventLoop, event_loop::EventLoop};
-use log::{info, error};
-
-//.................................. crate
+//{{{ crate imports 
 use crate::core::{MeshCore, VertexCore};
 use crate::depth_texture as dt;
 use crate::events::EventController;
+//}}}
+//{{{ std imports 
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+//}}}
+//{{{ dep imports 
+use serde::{Deserialize, Serialize};
+use wgpu::{self, util::DeviceExt, Device, Features};
+use winit::window::Window;
+use winit::{self, event::WindowEvent, event_loop::ActiveEventLoop};
+use topohedral_tracing::{debug, info, error};
+//}}}
 //--------------------------------------------------------------------------------------------------
 
-pub trait HasUniform
+//{{{ collection: constants
+const SHADER_2D: &str = include_str!("../d2/shader2d.wgsl");
+const SHADER_3D: &str = include_str!("../d3/shader3d.wgsl");
+//}}}
+//{{{ fun: shader_module_desc
+/// This function creates a WGPU shader module descriptor based on the provided dimension value.
+///
+/// # Arguments
+///
+/// * `d` - The dimension value, either 2 or 3.
+///
+/// # Returns
+///
+/// A `wgpu::ShaderModuleDescriptor` with the appropriate shader source based on the dimension value.
+///
+/// # Panics
+///
+/// This function will panic if an invalid dimension value is provided.
+fn shader_module_desc(d: usize) -> wgpu::ShaderModuleDescriptor<'static>
 {
-    fn uniform_buffer(&self) -> &[u8];
+    if d == 2
+    {
+        wgpu::ShaderModuleDescriptor {
+            label: Some("Shader Module 2D"),
+            source: wgpu::ShaderSource::Wgsl(SHADER_2D.into()),
+        }
+    }
+    else if d == 3
+    {
+        wgpu::ShaderModuleDescriptor {
+            label: Some("Shader Module 3D"),
+            source: wgpu::ShaderSource::Wgsl(SHADER_3D.into()),
+        }
+    }
+    else
+    {
+        panic!("Invalid dimension")
+    }
+}
+//}}}
+//{{{ fun: create_render_pipelines
+/// Creates the render pipelines for the application.
+///
+/// This function creates the necessary render pipelines for rendering lines, triangle edges, and triangle faces.
+/// It takes in the device, surface configuration, depth texture, vertex buffer layout, and a descriptor index.
+/// The function returns the created render pipelines, which can be used for rendering the corresponding geometry.
+fn create_render_pipelines(
+    device: &Device,
+    config: &wgpu::SurfaceConfiguration,
+    depth_texture: &dt::DepthTexture,
+    vert_buf_layout: &[wgpu::VertexBufferLayout],
+    d: usize,
+) -> (
+    wgpu::RenderPipeline,
+    Option<wgpu::RenderPipeline>,
+    wgpu::RenderPipeline,
+)
+{
+    let shader = device.create_shader_module(shader_module_desc(d));
+
+    let camera_bind_group_layout =
+        device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::VERTEX,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            }],
+            label: Some("camera_bind_group_layout"),
+        });
+
+    let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        label: Some("Render Pipeline Layout 1"),
+        bind_group_layouts: &[&camera_bind_group_layout],
+        push_constant_ranges: &[],
+    });
+
+    let line_render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        label: Some("Line Render Pipeline"),
+        layout: Some(&render_pipeline_layout),
+        vertex: wgpu::VertexState {
+            module: &shader,
+            entry_point: "vs_main",
+            buffers: vert_buf_layout,
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+        },
+        fragment: Some(wgpu::FragmentState {
+            module: &shader,
+            entry_point: "fs_main_line",
+            targets: &[Some(wgpu::ColorTargetState {
+                format: config.format,
+                blend: Some(wgpu::BlendState {
+                    color: wgpu::BlendComponent::REPLACE,
+                    alpha: wgpu::BlendComponent::REPLACE,
+                }),
+                write_mask: wgpu::ColorWrites::ALL,
+            })],
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+        }),
+        primitive: wgpu::PrimitiveState {
+            topology: wgpu::PrimitiveTopology::LineList,
+            ..Default::default()
+        },
+        depth_stencil: Some(wgpu::DepthStencilState {
+            format: dt::DepthTexture::DEPTH_FORMAT,
+            depth_write_enabled: true,
+            depth_compare: wgpu::CompareFunction::Less,
+            stencil: wgpu::StencilState::default(),
+            bias: wgpu::DepthBiasState::default(),
+        }),
+        multisample: wgpu::MultisampleState {
+            count: 1,
+            mask: !0,
+            alpha_to_coverage_enabled: false,
+        },
+        multiview: None,
+    });
+
+    let tri_edge_render_pipeline = if device
+        .features()
+        .contains(wgpu::Features::POLYGON_MODE_LINE)
+    {
+        Some(
+            device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("Triangle Edge Render Pipeline"),
+                layout: Some(&render_pipeline_layout),
+                vertex: wgpu::VertexState {
+                    module: &shader,
+                    entry_point: "vs_main",
+                    buffers: vert_buf_layout,
+                    compilation_options: wgpu::PipelineCompilationOptions::default(),
+                },
+                fragment: Some(wgpu::FragmentState {
+                    module: &shader,
+                    entry_point: "fs_main_line",
+                    targets: &[Some(wgpu::ColorTargetState {
+                        format: config.format,
+                        blend: Some(wgpu::BlendState {
+                            color: wgpu::BlendComponent::REPLACE,
+                            alpha: wgpu::BlendComponent::REPLACE,
+                        }),
+                        write_mask: wgpu::ColorWrites::ALL,
+                    })],
+                    compilation_options: wgpu::PipelineCompilationOptions::default(),
+                }),
+                primitive: wgpu::PrimitiveState {
+                    topology: wgpu::PrimitiveTopology::TriangleList,
+                    front_face: wgpu::FrontFace::Ccw,
+                    cull_mode: None,
+                    strip_index_format: None,
+                    polygon_mode: wgpu::PolygonMode::Line,
+                    unclipped_depth: false,
+                    conservative: false,
+                },
+                depth_stencil: Some(wgpu::DepthStencilState {
+                    format: dt::DepthTexture::DEPTH_FORMAT,
+                    depth_write_enabled: true,
+                    depth_compare: wgpu::CompareFunction::Less,
+                    stencil: wgpu::StencilState::default(),
+                    bias: wgpu::DepthBiasState {
+                        constant: -2,
+                        slope_scale: -2.0,
+                        clamp: 0.0,
+                    },
+                }),
+                multisample: wgpu::MultisampleState {
+                    count: 1,
+                    mask: !0,
+                    alpha_to_coverage_enabled: false,
+                },
+                multiview: None,
+            }),
+        )
+    }
+    else
+    {
+        None
+    };
+
+    let tri_face_render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        label: Some("Triangle Face Render Pipeline"),
+        layout: Some(&render_pipeline_layout),
+        vertex: wgpu::VertexState {
+            module: &shader,
+            entry_point: "vs_main",
+            buffers: vert_buf_layout,
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+        },
+        fragment: Some(wgpu::FragmentState {
+            module: &shader,
+            entry_point: "fs_main_triangle",
+            targets: &[Some(wgpu::ColorTargetState {
+                format: config.format,
+                blend: Some(wgpu::BlendState {
+                    color: wgpu::BlendComponent::REPLACE,
+                    alpha: wgpu::BlendComponent::REPLACE,
+                }),
+                write_mask: wgpu::ColorWrites::ALL,
+            })],
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+        }),
+        primitive: wgpu::PrimitiveState {
+            topology: wgpu::PrimitiveTopology::TriangleList,
+            strip_index_format: None,
+            front_face: wgpu::FrontFace::Ccw,
+            cull_mode: None,
+            polygon_mode: wgpu::PolygonMode::Fill,
+            unclipped_depth: false,
+            conservative: false,
+        },
+        depth_stencil: Some(wgpu::DepthStencilState {
+            format: dt::DepthTexture::DEPTH_FORMAT,
+            depth_write_enabled: true,
+            depth_compare: wgpu::CompareFunction::Less,
+            stencil: wgpu::StencilState::default(),
+            bias: wgpu::DepthBiasState::default(),
+        }),
+        multisample: wgpu::MultisampleState {
+            count: 1,
+            mask: !0,
+            alpha_to_coverage_enabled: false,
+        },
+        multiview: None,
+    });
+
+    (
+        line_render_pipeline,
+        tri_edge_render_pipeline,
+        tri_face_render_pipeline,
+    )
 }
 //..................................................................................................
-
+//}}}
+//{{{ collection: WgpuState
+//{{{ struct: WgpuState
 struct WgpuState<'a>
 {
     //................................. wgpu infrastructure
@@ -42,7 +280,8 @@ struct WgpuState<'a>
     // ............................... Winit data
     window: Arc<Window>,
 }
-
+//}}}
+//{{{ impl: WgpuState
 impl<'a> WgpuState<'a>
 {
     pub async fn new(
@@ -383,228 +622,15 @@ impl<'a> WgpuState<'a>
     }
 }
 //..................................................................................................
-
-const SHADER_2D: &str = include_str!("../d2/shader2d.wgsl");
-const SHADER_3D: &str = include_str!("../d3/shader3d.wgsl");
-
-fn shader_module_desc(d: usize) -> wgpu::ShaderModuleDescriptor<'static>
-{
-    if d == 2
-    {
-        wgpu::ShaderModuleDescriptor {
-            label: Some("Shader Module 2D"),
-            source: wgpu::ShaderSource::Wgsl(SHADER_2D.into()),
-        }
-    }
-    else if d == 3
-    {
-        wgpu::ShaderModuleDescriptor {
-            label: Some("Shader Module 3D"),
-            source: wgpu::ShaderSource::Wgsl(SHADER_3D.into()),
-        }
-    }
-    else
-    {
-        panic!("Invalid dimension")
-    }
-}
-
-/// This method creates 3 render pipelines.
+//}}}
+//}}}
+//{{{ collection: MeshState
+//{{{ struct: MeshState
+/// Represents the state of a mesh in the application.
 ///
-/// The first is the render pipeline for rendering lines.
-/// The second is the render pipeline for rendering triangle surfaces as wireframe.
-/// The third is the render pipeline for rendering triangle surfaces as solid.
-fn create_render_pipelines(
-    device: &Device,
-    config: &wgpu::SurfaceConfiguration,
-    depth_texture: &dt::DepthTexture,
-    vert_buf_layout: &[wgpu::VertexBufferLayout],
-    d: usize,
-) -> (
-    wgpu::RenderPipeline,
-    Option<wgpu::RenderPipeline>,
-    wgpu::RenderPipeline,
-)
-{
-    let shader = device.create_shader_module(shader_module_desc(d));
-
-    let camera_bind_group_layout =
-        device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            entries: &[wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::VERTEX,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
-                },
-                count: None,
-            }],
-            label: Some("camera_bind_group_layout"),
-        });
-
-    let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-        label: Some("Render Pipeline Layout 1"),
-        bind_group_layouts: &[&camera_bind_group_layout],
-        push_constant_ranges: &[],
-    });
-
-    let line_render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-        label: Some("Line Render Pipeline"),
-        layout: Some(&render_pipeline_layout),
-        vertex: wgpu::VertexState {
-            module: &shader,
-            entry_point: "vs_main",
-            buffers: vert_buf_layout,
-            compilation_options: wgpu::PipelineCompilationOptions::default(),
-        },
-        fragment: Some(wgpu::FragmentState {
-            module: &shader,
-            entry_point: "fs_main_line",
-            targets: &[Some(wgpu::ColorTargetState {
-                format: config.format,
-                blend: Some(wgpu::BlendState {
-                    color: wgpu::BlendComponent::REPLACE,
-                    alpha: wgpu::BlendComponent::REPLACE,
-                }),
-                write_mask: wgpu::ColorWrites::ALL,
-            })],
-            compilation_options: wgpu::PipelineCompilationOptions::default(),
-        }),
-        primitive: wgpu::PrimitiveState {
-            topology: wgpu::PrimitiveTopology::LineList,
-            ..Default::default()
-        },
-        depth_stencil: Some(wgpu::DepthStencilState {
-            format: dt::DepthTexture::DEPTH_FORMAT,
-            depth_write_enabled: true,
-            depth_compare: wgpu::CompareFunction::Less,
-            stencil: wgpu::StencilState::default(),
-            bias: wgpu::DepthBiasState::default(),
-        }),
-        multisample: wgpu::MultisampleState {
-            count: 1,
-            mask: !0,
-            alpha_to_coverage_enabled: false,
-        },
-        multiview: None,
-    });
-
-    let tri_edge_render_pipeline = if device
-        .features()
-        .contains(wgpu::Features::POLYGON_MODE_LINE)
-    {
-        Some(
-            device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-                label: Some("Triangle Edge Render Pipeline"),
-                layout: Some(&render_pipeline_layout),
-                vertex: wgpu::VertexState {
-                    module: &shader,
-                    entry_point: "vs_main",
-                    buffers: vert_buf_layout,
-                    compilation_options: wgpu::PipelineCompilationOptions::default(),
-                },
-                fragment: Some(wgpu::FragmentState {
-                    module: &shader,
-                    entry_point: "fs_main_line",
-                    targets: &[Some(wgpu::ColorTargetState {
-                        format: config.format,
-                        blend: Some(wgpu::BlendState {
-                            color: wgpu::BlendComponent::REPLACE,
-                            alpha: wgpu::BlendComponent::REPLACE,
-                        }),
-                        write_mask: wgpu::ColorWrites::ALL,
-                    })],
-                    compilation_options: wgpu::PipelineCompilationOptions::default(),
-                }),
-                primitive: wgpu::PrimitiveState {
-                    topology: wgpu::PrimitiveTopology::TriangleList,
-                    front_face: wgpu::FrontFace::Ccw,
-                    cull_mode: None,
-                    strip_index_format: None,
-                    polygon_mode: wgpu::PolygonMode::Line,
-                    unclipped_depth: false,
-                    conservative: false,
-                },
-                depth_stencil: Some(wgpu::DepthStencilState {
-                    format: dt::DepthTexture::DEPTH_FORMAT,
-                    depth_write_enabled: true,
-                    depth_compare: wgpu::CompareFunction::Less,
-                    stencil: wgpu::StencilState::default(),
-                    bias: wgpu::DepthBiasState {
-                        constant: -2,
-                        slope_scale: -2.0,
-                        clamp: 0.0,
-                    },
-                }),
-                multisample: wgpu::MultisampleState {
-                    count: 1,
-                    mask: !0,
-                    alpha_to_coverage_enabled: false,
-                },
-                multiview: None,
-            }),
-        )
-    }
-    else
-    {
-        None
-    };
-
-    let tri_face_render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-        label: Some("Triangle Face Render Pipeline"),
-        layout: Some(&render_pipeline_layout),
-        vertex: wgpu::VertexState {
-            module: &shader,
-            entry_point: "vs_main",
-            buffers: vert_buf_layout,
-            compilation_options: wgpu::PipelineCompilationOptions::default(),
-        },
-        fragment: Some(wgpu::FragmentState {
-            module: &shader,
-            entry_point: "fs_main_triangle",
-            targets: &[Some(wgpu::ColorTargetState {
-                format: config.format,
-                blend: Some(wgpu::BlendState {
-                    color: wgpu::BlendComponent::REPLACE,
-                    alpha: wgpu::BlendComponent::REPLACE,
-                }),
-                write_mask: wgpu::ColorWrites::ALL,
-            })],
-            compilation_options: wgpu::PipelineCompilationOptions::default(),
-        }),
-        primitive: wgpu::PrimitiveState {
-            topology: wgpu::PrimitiveTopology::TriangleList,
-            strip_index_format: None,
-            front_face: wgpu::FrontFace::Ccw,
-            cull_mode: None,
-            polygon_mode: wgpu::PolygonMode::Fill,
-            unclipped_depth: false,
-            conservative: false,
-        },
-        depth_stencil: Some(wgpu::DepthStencilState {
-            format: dt::DepthTexture::DEPTH_FORMAT,
-            depth_write_enabled: true,
-            depth_compare: wgpu::CompareFunction::Less,
-            stencil: wgpu::StencilState::default(),
-            bias: wgpu::DepthBiasState::default(),
-        }),
-        multisample: wgpu::MultisampleState {
-            count: 1,
-            mask: !0,
-            alpha_to_coverage_enabled: false,
-        },
-        multiview: None,
-    });
-
-    (
-        line_render_pipeline,
-        tri_edge_render_pipeline,
-        tri_face_render_pipeline,
-    )
-}
-//..................................................................................................
-
+/// This struct contains the next unique identifier (UID) to be assigned to a new mesh,
+/// as well as a HashMap that stores all the existing meshes, indexed by their UIDs.
+pub 
 struct MeshState<'a, V>
 where
     V: VertexCore + Deserialize<'a> + Serialize,
@@ -612,7 +638,8 @@ where
     pub next_uid: usize,
     pub meshes: HashMap<usize, MeshCore<'a, V>>,
 }
-
+//}}}
+//{{{ impl: MeshState   
 impl<'a, V> MeshState<'a, V>
 where
     V: VertexCore + Deserialize<'a> + Serialize,
@@ -651,13 +678,17 @@ where
     }
 }
 //..................................................................................................
-
+//}}}
+//}}}
+//{{{ collection: StateError
+//{{{ enum: StateError
 #[derive(Debug)]
 pub enum StateError
 {
     CommandError(String),
 }
-
+//}}}
+//{{{ impl: Display for StateError
 impl std::fmt::Display for StateError
 {
     fn fmt(
@@ -672,7 +703,9 @@ impl std::fmt::Display for StateError
     }
 }
 //..................................................................................................
-
+//}}}
+//}}}
+//{{{ trait: ViewStateCore
 pub trait ViewStateCore
 {
     fn update(&mut self);
@@ -680,7 +713,9 @@ pub trait ViewStateCore
     fn view_uniform_buffer(&self) -> &[u8];
 }
 //..................................................................................................
-
+//}}}
+//{{{ collection: StateCore 
+//{{{ struct: StateCore
 pub struct StateCore<'a, V, ViewState>
 where
     V: VertexCore + Deserialize<'a> + Serialize,
@@ -690,18 +725,22 @@ where
     wgpu_state: Option<WgpuState<'a>>,
     mesh_state: MeshState<'a, V>,
 }
-
+//}}}
+//{{{ impl: StateCore
 impl<'a, V, ViewState> StateCore<'a, V, ViewState>
 where
     V: VertexCore + Deserialize<'a> + Serialize,
     ViewState: ViewStateCore + Default,
 {
+    //{{{ fun: new
     pub fn new() -> Self
     {
+        //{{{ trace
+        info!("Creating new StateCore");
+        //}}}
+
         let view_state = ViewState::default();
-
         let mesh_state = MeshState::new();
-
         let out = StateCore {
             view_state: view_state,
             wgpu_state: None,
@@ -709,17 +748,22 @@ where
         };
         out
     }
-
+    //}}}
+    //{{{ fun: new_arc_mutex
     pub fn new_arc_mutex() -> Arc<Mutex<Self>>
     {
         Arc::new(Mutex::new(Self::new()))
     }
-
+    //}}}
+    //{{{ fun: launch_window
     pub async fn launch_window(
         &mut self,
         event_loop: &ActiveEventLoop,
     )
     {
+        //{{{ trace
+        info!("Launching window");
+        //}}}
         let wgpu_state = WgpuState::new(
             event_loop,
             self.view_state.view_uniform_buffer(),
@@ -729,7 +773,8 @@ where
         .await;
         self.wgpu_state = Some(wgpu_state);
     }
-
+    //}}}
+    //{{{ fun: handle_event
     pub fn handle_event(
         &mut self,
         window_id: &winit::window::WindowId, 
@@ -738,15 +783,16 @@ where
     {
         match event
         {
-            // ----------------------------------- Mouse Wheel
+            //{{{ case: MouseWheel
             WindowEvent::MouseWheel { delta, .. } if self.has_window(window_id) =>
             {
-                log::debug!("Mouse wheel: {:?}", delta);
+                debug!("Mouse wheel: {:?}", delta);
                 self.view_state.view_controller().mouse_wheel_update(*delta);
 
                 self.window_request_redraw();
             }
-            // ---------------------------------- Mouse click
+            //}}}
+            //{{{ case: MouseInput
             WindowEvent::MouseInput { state, button, .. }if self.has_window(window_id) =>
             {
                 log::debug!("Mouse input: {:?} {:?}", state, button);
@@ -756,14 +802,16 @@ where
 
                 self.window_request_redraw();
             }
-            // ---------------------------------- Cursor Moved
+            //}}}
+            //{{{ case: CursorMoved
             WindowEvent::CursorMoved { position, .. } if self.has_window(window_id) =>
             {
                 self.view_state
                     .view_controller()
                     .cursor_moved_update(*position);
             }
-            // ---------------------------------- Keyboard input
+            //}}}
+            //{{{ case: KeyboardInput
             WindowEvent::KeyboardInput { event, .. } if self.has_window(window_id) =>
             {
                 log::debug!("Keyboard input: {:?}", event);
@@ -781,14 +829,16 @@ where
                     {}
                 }
             }
-            // ---------------------------------- Key modifiers changed
+            //}}}
+            //{{{ case: ModifiersChanged
             WindowEvent::ModifiersChanged(ev) if self.has_window(window_id) =>
             {
                 log::debug!("Modifiers changed: {:?}", ev);
                 self.view_state.view_controller().key_modifiers_update(ev.state());
                 self.window_request_redraw();
             }
-            // ---------------------------------- Window resized
+            //}}}
+            //{{{ case: Resized
             WindowEvent::Resized(size) if self.has_window(window_id) =>
             {
                 log::debug!("Window resized: {:?}", size);
@@ -799,7 +849,8 @@ where
                     .resize(size.width, size.height);
                 self.window_request_redraw();
             }
-            // ---------------------------------- Redraw Requested
+            //}}}
+            //{{{ case: RedrawRequested
             WindowEvent::RedrawRequested if self.has_window(window_id) =>
             {
                 log::debug!("Redraw requested");
@@ -819,11 +870,15 @@ where
                     }
                 }
             },
+            //}}}
+            //{{{ default
             _ => (),
+            //}}}
         }
     }
     //..............................................................
-
+    //}}}
+    //{{{ fun: has_windo
     pub fn has_window(
         &mut self,
         window_id: &winit::window::WindowId,
@@ -832,13 +887,15 @@ where
         self.wgpu_state.as_mut().unwrap().window.id() == *window_id
     }
     //..............................................................
-
+    //}}}
+    //{{{ fun: window_request_redraw
     pub fn window_request_redraw(&mut self)
     {
         self.wgpu_state.as_mut().unwrap().window_request_redraw();
     }
     //..............................................................
-
+    //}}}
+    //{{{ fun: add_mesh
     pub fn add_mesh(
         &mut self,
         mesh: MeshCore<'a, V>,
@@ -848,7 +905,8 @@ where
         uid
     }
     //..............................................................
-
+    //}}}
+    //{{{ fun: get_mesh
     pub fn get_mesh(
         &self,
         uid: usize,
@@ -857,7 +915,8 @@ where
         self.mesh_state.meshes.get(&uid)
     }
     //..............................................................
-
+    //}}}
+    //{{{ fun: get_mesh_mut
     pub fn get_mesh_mut(
         &mut self,
         uid: usize,
@@ -866,5 +925,18 @@ where
         self.mesh_state.meshes.get_mut(&uid)
     }
     //..............................................................
+    //}}}
 }
+//}}}
 //..................................................................................................
+//}}}
+
+
+//-------------------------------------------------------------------------------------------------
+//{{{ mod: tests
+#[cfg(test)]
+mod tests
+{
+  
+}
+//}}}
