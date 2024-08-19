@@ -1,11 +1,24 @@
+//! This module contains the implementation of the `Mesh` struct for the 3D viewer.
+//!
+//! This module defines the set of items which may be  drawn in the 3D viewer and provides an 
+//! API for each type of item. The general item will simply take a mesh and draw it. 
+//--------------------------------------------------------------------------------------------------
+
+//{{{ crate imports 
 use crate::common::{self, Color, Vec3};
 use crate::d3::vertex::{Vertex, VertexDescriptor};
 use crate::core::MeshCore;
+//}}}
+//{{{ std imports 
+//}}}
+//{{{ dep imports 
+//}}}
+//--------------------------------------------------------------------------------------------------
 
-
-
+//{{{ collection: constants and type
 pub type Mesh<'a> = MeshCore<'a, Vertex>;
-
+//}}}
+//{{{ struct: LineDescriptor
 /// This struct encapuslates the geometric information needed to fully specify a line.
 pub struct LineDescriptor
 {
@@ -16,7 +29,8 @@ pub struct LineDescriptor
     /// Color of line
     pub color: Color,
 }
-
+//}}}
+//{{{ struct: PlaneDescriptor
 pub struct PlaneDescriptor
 {    
     /// Origin of local coordinate system
@@ -38,7 +52,8 @@ pub struct PlaneDescriptor
     /// Color of triangles in render
     pub tri_color: Color,
 }
-
+//}}}
+//{{{ struct: CuboidDescriptor
 /// This struct encapsulates the geometric information needed to fully specify a cuboid.
 pub struct CuboidDescriptor
 {
@@ -61,7 +76,8 @@ pub struct CuboidDescriptor
     /// Color of triangles in render
     pub tri_color: Color,
 }
-
+//}}}
+//{{{ struct: SphereDescriptor
 /// This struct encapsulates the geometric information needed to fully specify a cylinder.
 pub struct CylinderDescriptor
 {
@@ -82,7 +98,8 @@ pub struct CylinderDescriptor
     /// Flag indicating whether to make a closed cylinder or open cylinder
     pub open: bool,
 }
-
+//}}}
+//{{{ struct: SphereDescriptor
 /// This struct encapuslates the geometric information needed to fully specify a sphere
 pub struct SphereDescriptor
 {
@@ -101,7 +118,8 @@ pub struct SphereDescriptor
     /// Color of triangles in render
     pub tri_color: Color,
 }
-
+//}}}
+//{{{ struct: AxesDescriptor
 pub struct AxesDescriptor
 {
     pub origin: Vec3,
@@ -111,7 +129,8 @@ pub struct AxesDescriptor
     pub neg_len: f32,
     pub pos_len: f32,
 }
-
+//}}}
+//{{{ trait: Mesh3D
 pub trait Mesh3D<'a>
 {
     fn create_line(line_disc: &LineDescriptor) -> Self;
@@ -137,8 +156,8 @@ pub trait Mesh3D<'a>
         tri_color: &Color,
     );
 }
-
-
+//}}}
+//{{{ impl: Mesh3D for Mes
 impl<'a> Mesh3D<'a> for Mesh<'a>
 {
 
@@ -458,11 +477,14 @@ impl<'a> Mesh3D<'a> for Mesh<'a>
     }
 }
 //..................................................................................................
+//}}}
 
+//-------------------------------------------------------------------------------------------------
+//{{{ mod: tests
 #[cfg(test)]
-
-mod test
+mod tests
 {
+  
 
     use super::*;
 
@@ -515,3 +537,4 @@ mod test
         // let mut vertex_view = cube.vertex_view_mut(0);
     }
 }
+//}}}
