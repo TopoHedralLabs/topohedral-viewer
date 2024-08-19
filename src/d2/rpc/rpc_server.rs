@@ -102,7 +102,7 @@ impl d2rpc::state_service_server::StateService for StateServer
         let addr = request.remote_addr();
         let msg = request.into_inner();
 
-        //{{{ log
+        //{{{ trace
         info!(
             "Received add_axes request from {} on port {:?}",
             msg.client_name, addr
@@ -141,7 +141,7 @@ impl d2rpc::state_service_server::StateService for StateServer
         let addr = request.remote_addr();
         let msg = request.into_inner();
 
-        //{{{ log
+        //{{{ trace
         info!(
             "Received add_axes request from {} on port {:?}",
             msg.client_name, addr
@@ -181,7 +181,7 @@ impl d2rpc::state_service_server::StateService for StateServer
     {
         let addr = request.remote_addr();
         let msg = request.into_inner();
-        //{{{ log
+        //{{{ trace
         info!(
             "Received add_axes request from {} on port {:?}",
             msg.client_name, addr
