@@ -195,6 +195,7 @@ impl d2rpc::state_service_server::StateService for StateServer
             let circle_desc = CircleDescriptor {
                 center: circle_desc_rpc.center.unwrap().into(),
                 radius: circle_desc_rpc.radius,
+                num_sides: circle_desc_rpc.num_sides,
                 line_color: circle_desc_rpc.line_color.unwrap().into(),
                 tri_color: circle_desc_rpc.tri_color.unwrap().into(),
                 cell_type: (circle_desc_rpc.cell_type as i32).into()

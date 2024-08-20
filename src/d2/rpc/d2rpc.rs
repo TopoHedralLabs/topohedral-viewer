@@ -80,11 +80,13 @@ pub struct CirlceDescriptor {
     pub center: ::core::option::Option<Vec2>,
     #[prost(float, tag = "2")]
     pub radius: f32,
-    #[prost(message, optional, tag = "3")]
-    pub line_color: ::core::option::Option<Color>,
+    #[prost(uint32, tag = "3")]
+    pub num_sides: u32,
     #[prost(message, optional, tag = "4")]
+    pub line_color: ::core::option::Option<Color>,
+    #[prost(message, optional, tag = "5")]
     pub tri_color: ::core::option::Option<Color>,
-    #[prost(enumeration = "CellType", tag = "5")]
+    #[prost(enumeration = "CellType", tag = "6")]
     pub cell_type: i32,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
