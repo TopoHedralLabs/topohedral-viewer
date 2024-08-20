@@ -64,9 +64,10 @@ message AddSquareRequest {
 message CirlceDescriptor {
     Vec2 center = 1;
     float radius = 2;
-    Color line_color = 3;
-    Color tri_color = 4;   
-    CellType cell_type = 5;
+    uint32 num_sides = 3;
+    Color line_color = 4;
+    Color tri_color = 5;   
+    CellType cell_type = 6;
 }
 
 message AddCircleRequest {
