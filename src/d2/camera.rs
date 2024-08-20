@@ -11,8 +11,12 @@ use crate::events::*;
 //}}}
 //{{{ dep imports 
 use bytemuck::{Pod, Zeroable};
+use::topohedral_tracing::*;
 //}}}
 //--------------------------------------------------------------------------------------------------
+
+const ZOOM_MIN: f32 = 0.1;
+const ZOOM_MAX: f32 = 10.0;
 
 //{{{ collection: Camera
 //{{{ struct: Camera
@@ -37,16 +41,25 @@ pub struct Camera
 //{{{ impl: Camera
 impl Camera 
 {
+    //{{{ fun: zoom
     pub fn zoom(
         &mut self,
         delta: f32,
     )
     {
+        //{{{ trace
+        debug!("delta by {}", delta);
+        //}}}
         self.zoom += delta;
+        self.zoom = self.zoom.clamp(ZOOM_MIN, ZOOM_MAX);
     }
-
+    //}}}
+    //{{{ fun: rotate
     pub fn rotate(&mut self, delta: f32)
     {
+        //{{{ trace
+        debug!("delta by {}", delta);
+        //}}}
         self.rotation += delta;
         let s = self.rotation.sin();
         let c = self.rotation.cos();
@@ -55,19 +68,24 @@ impl Camera
         self.y_axis[0] = -s;
         self.y_axis[1] = c;
     }
-
+    //}}}
+    //{{{ fun: pan
     pub fn pan(&mut self, delta_x: f32, delta_y: f32)   
     {
+        //{{{ trace
+        debug!("delta_x: {}, delta_y: {}", delta_x, delta_y);
+        //}}}
         self.position[0] += delta_x * self.x_axis[0] + delta_y * self.y_axis[0];
         self.position[1] += delta_x * self.x_axis[1] + delta_y * self.y_axis[1];
     }
-
+    //}}}
 }
 //..................................................................................................
 //}}}
 //{{{ impl Default for Camera
 impl Default for Camera
 {
+    //{{{ fun: default
     fn default() -> Self {
         Self {
             position: Vec2::zeros(),
@@ -77,6 +95,7 @@ impl Default for Camera
             y_axis: Vec2::new(0.0, 1.0),
         }
     }
+    //}}}
 }
 //..................................................................................................
 //}}}
@@ -110,7 +129,7 @@ impl Default for ViewOptions
         Self {
             key_pan_delta: 0.5,
             rotate_delta: rad(2.5),
-            zoom_speed: 0.1,
+            zoom_speed: 0.005,
         }
     }
 }
@@ -135,6 +154,10 @@ impl View
 {
     pub fn update_uniform(&mut self)
     {
+        //{{{ trace
+        debug!("updating uniform with camera:");
+        debug!("{:?}", self.camera);
+        //}}}
         let theta = self.camera.rotation;
         let s = theta.sin();
         let c = theta.cos();
@@ -145,12 +168,21 @@ impl View
         let rho = self.camera.zoom;
         let dx = self.camera.position[0];
         let dy = self.camera.position[1];   
+        //{{{ trace
+        debug!("theta: {}, rho: {}, dx: {}, dy: {}", theta, rho, dx, dy);
+        //}}}
         let zoom_pan_matrix = Mat4::new(  rho, 0.0, dx, 0.0,
                                           0.0, rho, dy, 0.0,              
                                           0.0, 0.0, 1.0, 0.0,
                                           0.0, 0.0, 0.0, 0.0 );
-        
+
+
         let view_matrix = rot_matrix * zoom_pan_matrix; 
+        //{{{ trace
+        trace!(target: "update_uniform", "rot_matrix: {}", rot_matrix);
+        trace!(target: "update_uniform", "zoom_pan_matrix: {}", zoom_pan_matrix);
+        trace!(target: "update_uniform", "view_matrix: {}", view_matrix);
+        //}}}
         self.uniform.view_matrix = view_matrix.into();
     }
 }
