@@ -52,6 +52,7 @@ pub struct CircleDescriptor
 {
     pub center: Vec2,
     pub radius: f32,
+    pub num_sides: u32,
     pub line_color: Color,
     pub tri_color: Color,
     pub cell_type: CellType,
@@ -189,7 +190,52 @@ impl<'a> Mesh2D<'a> for Mesh<'a>
         circle: &CircleDescriptor,
     ) -> Self
     {
-        todo!()
+        match circle.cell_type {
+            //{{{ case: CellType::Line
+            CellType::Line => {
+
+                let mut mesh = Mesh::from_num_lines(circle.num_sides as usize);
+                let pi = std::f32::consts::PI;
+                let c = circle.center;
+                let r = circle.radius;
+
+                for i in 0..circle.num_sides {
+                    let ii = (i+1) % circle.num_sides;
+                    let angle1 = (i as f32   / circle.num_sides as f32) *  2.0 * pi;
+                    let angle2 = (ii as f32   / circle.num_sides as f32) *  2.0 * pi;
+                    let (sin_theta1, cos_theta1) = angle1.sin_cos();
+                    let (sin_theta2, cos_theta2) = angle2.sin_cos();
+                    let p1 = c + r * Vec2::new(cos_theta1, sin_theta1);
+                    let p2 = c + r * Vec2::new(cos_theta2, sin_theta2);
+                    mesh.add_line(&p1, &p2, &circle.line_color, &circle.tri_color);
+                }
+                mesh
+            },
+            //}}}
+            //{{{ case: CellType::Triangle
+            CellType::Triangle => {
+                let mut mesh = Mesh::from_num_triangles(circle.num_sides as usize);
+                let pi = std::f32::consts::PI;
+                let c = circle.center;
+                let r = circle.radius;
+
+                for i in 0..circle.num_sides {
+                    let ii = (i+1) % circle.num_sides;
+                    let angle1 = (i as f32   / circle.num_sides as f32) *  2.0 * pi;
+                    let angle2 = (ii as f32   / circle.num_sides as f32) *  2.0 * pi;
+                    let (sin_theta1, cos_theta1) = angle1.sin_cos();
+                    let (sin_theta2, cos_theta2) = angle2.sin_cos();
+                    let p1 = c + r * Vec2::new(cos_theta1, sin_theta1);
+                    let p2 = c + r * Vec2::new(cos_theta2, sin_theta2);
+                    mesh.add_triangle(&c, &p1, &p2, &circle.line_color, &circle.tri_color);
+                }
+                mesh
+            }
+            //}}}
+            _ => {
+                panic!("Unknown cell type");
+            }
+        }
     }
     //}}}
     //{{{ fun: add_line
