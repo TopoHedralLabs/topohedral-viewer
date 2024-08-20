@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 use wgpu::{self, util::DeviceExt, Device, Features};
 use winit::window::Window;
 use winit::{self, event::WindowEvent, event_loop::ActiveEventLoop};
-use topohedral_tracing::{debug, info, error};
+use topohedral_tracing::*;
 //}}}
 //--------------------------------------------------------------------------------------------------
 
@@ -42,23 +42,29 @@ const SHADER_3D: &str = include_str!("../d3/shader3d.wgsl");
 fn shader_module_desc(d: usize) -> wgpu::ShaderModuleDescriptor<'static>
 {
     if d == 2
+    //{{{ case: 2D
     {
         wgpu::ShaderModuleDescriptor {
             label: Some("Shader Module 2D"),
             source: wgpu::ShaderSource::Wgsl(SHADER_2D.into()),
         }
     }
+    //}}}
     else if d == 3
+    //{{{ case: 3D
     {
         wgpu::ShaderModuleDescriptor {
             label: Some("Shader Module 3D"),
             source: wgpu::ShaderSource::Wgsl(SHADER_3D.into()),
         }
     }
+    //}}}
     else
+    //{{{ case: invalid
     {
         panic!("Invalid dimension")
     }
+    //}}}
 }
 //}}}
 //{{{ fun: create_render_pipelines
@@ -714,7 +720,7 @@ pub trait ViewStateCore
 }
 //..................................................................................................
 //}}}
-//{{{ collection: StateCore 
+//{{{ collection: StateCore
 //{{{ struct: StateCore
 pub struct StateCore<'a, V, ViewState>
 where
@@ -786,7 +792,9 @@ where
             //{{{ case: MouseWheel
             WindowEvent::MouseWheel { delta, .. } if self.has_window(window_id) =>
             {
+                //{{{ trace
                 debug!("Mouse wheel: {:?}", delta);
+                //}}}
                 self.view_state.view_controller().mouse_wheel_update(*delta);
 
                 self.window_request_redraw();
@@ -795,7 +803,9 @@ where
             //{{{ case: MouseInput
             WindowEvent::MouseInput { state, button, .. }if self.has_window(window_id) =>
             {
-                log::debug!("Mouse input: {:?} {:?}", state, button);
+                //{{{ trace
+                debug!("Mouse input: {:?} {:?}", state, button);
+                //}}}
                 self.view_state
                     .view_controller()
                     .mouse_input_update(*state, *button);
@@ -806,6 +816,9 @@ where
             //{{{ case: CursorMoved
             WindowEvent::CursorMoved { position, .. } if self.has_window(window_id) =>
             {
+                //{{{ trace
+                trace!("Cursor moved: {:?}", position);
+                //}}}
                 self.view_state
                     .view_controller()
                     .cursor_moved_update(*position);
@@ -814,7 +827,9 @@ where
             //{{{ case: KeyboardInput
             WindowEvent::KeyboardInput { event, .. } if self.has_window(window_id) =>
             {
-                log::debug!("Keyboard input: {:?}", event);
+                //{{{ trace
+                debug!("Keyboard input: {:?}", event);
+                //}}}
                 match event.logical_key
                 {
                     winit::keyboard::Key::Named(key) =>
@@ -833,7 +848,9 @@ where
             //{{{ case: ModifiersChanged
             WindowEvent::ModifiersChanged(ev) if self.has_window(window_id) =>
             {
-                log::debug!("Modifiers changed: {:?}", ev);
+                //{{{ trace
+                debug!("Modifiers changed: {:?}", ev);
+                //}}}
                 self.view_state.view_controller().key_modifiers_update(ev.state());
                 self.window_request_redraw();
             }
@@ -841,7 +858,9 @@ where
             //{{{ case: Resized
             WindowEvent::Resized(size) if self.has_window(window_id) =>
             {
-                log::debug!("Window resized: {:?}", size);
+                //{{{ trace
+                debug!("Window resized: {:?}", size);
+                //}}}
                 self.view_state.view_controller().resize_update(*size);
                 self.wgpu_state
                     .as_mut()
@@ -853,7 +872,9 @@ where
             //{{{ case: RedrawRequested
             WindowEvent::RedrawRequested if self.has_window(window_id) =>
             {
-                log::debug!("Redraw requested");
+                //{{{ trace
+                debug!("Redraw requested");
+                //}}}
                 self.view_state.update();
                 self.wgpu_state
                     .as_mut()
@@ -863,10 +884,16 @@ where
                 match self.wgpu_state.as_mut().unwrap().render()
                 {
                     Ok(()) =>
-                    {}
+                    {
+                        //{{{ trace
+                        info!("Render successful");
+                        //}}}
+                    }
                     Err(e) =>
                     {
+                        //{{{ trace
                         error!("WGPU error: {}", e);    
+                        //}}}
                     }
                 }
             },
