@@ -18,14 +18,14 @@ use std::sync::{Arc, Mutex};
 use winit::{
     self,
     application::ApplicationHandler,
-    event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
 };
+use winit::event::WindowEvent;
 
 use tokio::runtime::{Handle, Runtime};
 use tokio::task;
 use tokio::{runtime, sync::mpsc};
-use clap::{Args, Parser, Subcommand, ValueEnum};
+use clap::{Parser, Subcommand, ValueEnum};
 
 use topohedral_tracing::*;
 //}}}
