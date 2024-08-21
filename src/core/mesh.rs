@@ -1,11 +1,24 @@
-use std::hash::{Hash, Hasher};
-use std::marker::PhantomData;
+//! This module defines the core mesh funcitonality shared between the 2D and 3D viewers.
+//!
+//! Because the topology of the mesh is the same in both viewers, that being lines and triangles, 
+//! much of the functionality is shared between the two. The main difference is the vertex type, 
+//! which for 2D is 2 f32s and for 3D is 3 f32s.    
+//--------------------------------------------------------------------------------------------------
 
+//{{{ crate imports 
 use crate::common::{CellType, Color};
 use crate::Colormap;
-
+//}}}
+//{{{ std imports 
+use std::hash::{Hash, Hasher};
+use std::marker::PhantomData;
+//}}}
+//{{{ dep imports 
 use serde::{Deserialize, Serialize};
+//}}}
+//--------------------------------------------------------------------------------------------------
 
+//{{{ trait: VertexViewCore
 /// A trait that defines the core functionality for a vertex view in a mesh.
 ///
 /// This trait provides methods for interacting with the vertex data of a vertiex already in a mesh, 
@@ -31,7 +44,8 @@ pub trait VertexViewCore<'a>
     fn get_triangle_color(&self) -> [f32; 3];
 }
 //..................................................................................................
-
+//}}}
+//{{{ trait: VertexCore
 /// A trait that defines the core functionality for a vertex in a mesh.
 ///
 /// This trait provided the key query methods needed to define the memory layout of a vertex 
@@ -62,7 +76,9 @@ pub trait VertexCore
     fn dim() -> usize;
 }
 //..................................................................................................
-
+//}}}
+//{{{ collection: MeshCore
+//{{{ struct: MeshCore
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct MeshCore<'a, V>
 where
@@ -76,7 +92,8 @@ where
     #[serde(skip)]
     phant: PhantomData<&'a V>,
 }
-
+//}}}
+//{{{ impl: MeshCore
 impl<'a, V> MeshCore<'a, V>
 where
     V: VertexCore + Deserialize<'a> + Serialize,
@@ -248,7 +265,8 @@ where
         }
     }
 }
-
+//}}}
+//{{{ impl: Hash for MeshCore
 impl<'a, V> Hash for MeshCore<'a, V>
 where
     V: VertexCore + Deserialize<'a> + Serialize,
@@ -261,7 +279,8 @@ where
         self.uid.hash(state)
     }
 }
-
+//}}}
+//{{{ impl:  PartialEq for MeshCore
 impl<'a, V> PartialEq for MeshCore<'a, V>
 where
     V: VertexCore + Deserialize<'a> + Serialize,
@@ -275,3 +294,14 @@ where
     }
 }
 //..................................................................................................
+//}}}
+//}}}
+
+//-------------------------------------------------------------------------------------------------
+//{{{ mod: tests
+#[cfg(test)]
+mod tests
+{
+  
+}
+//}}}
