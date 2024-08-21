@@ -1,22 +1,32 @@
-//! This submodule provides a minimal colormap implementation
-//..................................................................................................
+//! This module provides a minimal colormap implementation
+//!
+//! Colormaps take scalar values in a given range and map them to colors, which are rgp triplets.
+//--------------------------------------------------------------------------------------------------
 
-
+//{{{ crate imports 
+//}}}
+//{{{ std imports 
 use std::fmt;
 use std::io;
-
+//}}}
+//{{{ dep imports 
 use serde::de::DeserializeSeed;
 use serde::{
     de::{self, MapAccess, SeqAccess, Visitor},
     Deserialize,
 };
 use thiserror::Error;
-//..................................................................................................
+//}}}
+//--------------------------------------------------------------------------------------------------
 
+//{{{ collection: constants
 const VIRIDIS_JSON: &str = include_str!("colormaps/viridis.json");
-
+//}}}
+//{{{ collection: colorArrayVisitor
+//{{{ struct: ColorArrayVisitor
 struct ColorArrayVisitor;
-
+//}}}
+//{{{ impl: Visitor for ColorArrayVisitor
 impl<'de> Visitor<'de> for ColorArrayVisitor
 {
     type Value = [[f32; 3]; 256];
@@ -48,7 +58,8 @@ impl<'de> Visitor<'de> for ColorArrayVisitor
         Ok(colors)
     }
 }
-
+//}}}
+//{{{ impl DeserializeSeed for ColorArrayVisitor
 impl<'de> DeserializeSeed<'de> for ColorArrayVisitor
 {
     type Value = [[f32; 3]; 256];
@@ -64,9 +75,13 @@ impl<'de> DeserializeSeed<'de> for ColorArrayVisitor
     }
 }
 //..................................................................................................
-
+//}}}
+//}}}
+//{{{ collection: ColormapVisitor
+//{{{ struct: ColormapVisitor
 struct ColormapVisitor;
-
+//}}}
+//{{{ impl: Visitor for ColormapVisitor
 impl<'de> Visitor<'de> for ColormapVisitor
 {
     type Value = Colormap;
@@ -118,7 +133,10 @@ impl<'de> Visitor<'de> for ColormapVisitor
     }
 }
 //..................................................................................................
-
+//}}}
+//}}}
+//{{{ collection: Colormap
+//{{{ struct: Colormap
 /// This is a very simple Lin-Seg colormap, where the colors are linearly interpolated between the
 /// given colors.
 ///
@@ -130,7 +148,8 @@ pub struct Colormap
     pub name: String,
     pub colors: [[f32; 3]; 256],
 }
-
+//}}}
+//{{{ impl: Deserialize for Colormap
 impl<'de> Deserialize<'de> for Colormap
 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -141,7 +160,8 @@ impl<'de> Deserialize<'de> for Colormap
         deserializer.deserialize_struct("Colormap", FIELDS, ColormapVisitor)
     }
 }
-
+//}}}
+//{{{ impl: Colormap
 impl Colormap
 {
     pub fn new(name: String) -> Result<Self, ColormapError>
@@ -162,7 +182,9 @@ impl Colormap
     }
 }
 //..................................................................................................
-
+//}}}
+//}}}
+//{{{ enum: ColormapError
 #[derive(Error, Debug)]
 pub enum ColormapError
 {
@@ -174,9 +196,12 @@ pub enum ColormapError
     DeserializationError(#[from] serde_json::Error),
 }
 //..................................................................................................
+//}}}
 
+//-------------------------------------------------------------------------------------------------
+//{{{ mod: tests
 #[cfg(test)]
-mod tests 
+mod tests
 {
     use super::*;
 
@@ -205,3 +230,4 @@ mod tests
         }
     }
 }
+//}}}
