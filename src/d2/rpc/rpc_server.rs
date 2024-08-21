@@ -11,12 +11,14 @@
 
 //{{{ crate imports 
 use super::d2rpc;
+use super::common::*;
 use super::super::mesh::{AxesDescriptor, SquareDescriptor, CircleDescriptor};
 use super::super::state::{State, State2D};
-use crate::common::{Vec2, Color, CellType};
+use crate::common::Validated;
 //}}}
 //{{{ std imports 
 use core::net::SocketAddr;
+use std::result::Result;
 use std::sync::{Arc, Mutex};
 //}}}
 //{{{ dep imports 
@@ -26,62 +28,6 @@ use tonic::{transport::Server, Request, Response, Status};
 //}}}
 //--------------------------------------------------------------------------------------------------
 
-//{{{ impl: AddAxesRequest
-impl d2rpc::AddAxesRequest
-{
-    pub fn is_valid(&self) -> bool
-    {
-        let mut is_val = true;
-        match self.axes_descriptor
-        {
-            Some(ref axes_descriptor) =>
-            {
-                is_val &= axes_descriptor.origin.is_some();
-                is_val &= axes_descriptor.x_axis.is_some();
-                is_val &= axes_descriptor.y_axis.is_some();
-                is_val &= axes_descriptor.pos_len > 0.0 && axes_descriptor.neg_len > 0.0;
-            }
-            None =>
-            {
-                is_val = false;
-            }
-        }
-        is_val
-    }
-}
-//}}}
-//{{{ impl: From<d2rpc::Vec2> for Vec2
-impl From<d2rpc::Vec2> for Vec2
-{
-    fn from(v: d2rpc::Vec2) -> Self
-    {
-        Vec2::new(v.x, v.y)
-    }
-}
-//}}}
-//{{{ impl: From<d2rpc::Color> for Color
-impl From<d2rpc::Color> for Color
-{
-    fn from(c: d2rpc::Color) -> Self
-    {
-        Color::Other((c.r, c.g, c.b,))
-    }
-}
-//}}}
-//{{{ impl: From<d2rpc::CellType> for CellType
-impl  From<i32> for CellType
-{
-    fn from(c: i32) -> Self
-    {
-        match c
-        {
-            2 => CellType::Triangle,
-            1 =>  CellType::Line,
-            _ => CellType::None,
-        }
-    }
-}
-//}}}
 //{{{ struct: StateServer
 pub struct StateServer
 {
@@ -101,34 +47,25 @@ impl d2rpc::state_service_server::StateService for StateServer
     {
         let addr = request.remote_addr();
         let msg = request.into_inner();
-
         //{{{ trace
         info!(
             "Received add_axes request from {} on port {:?}",
             msg.client_name, addr
         );
         //}}}
-        
-        let mut out: Result<Response<d2rpc::AddItemResponse>, Status> =
-            Err(Status::invalid_argument("Invalid axes descriptor"));
-
-        if let Some(axes_desc_rpc) = msg.axes_descriptor
+        let out:  Result<Response<d2rpc::AddItemResponse>, Status> = if msg.is_valid() 
         {
-            let axes_desc = AxesDescriptor {
-                origin: axes_desc_rpc.origin.unwrap().into(),
-                x_axis: axes_desc_rpc.x_axis.unwrap().into(),
-                y_axis: axes_desc_rpc.y_axis.unwrap().into(),
-                pos_len: axes_desc_rpc.pos_len,
-                neg_len: axes_desc_rpc.neg_len,
-            };
-
+            let axes_desc = msg.axes_descriptor.unwrap().into();
             let mut state = self.state.lock().unwrap();
             let mesh_uid = state.add_axes(&axes_desc);
             let add_axes_result = d2rpc::AddItemResponse {
                 id: mesh_uid as u64,
             };
-            out = Ok(Response::new(add_axes_result));
+            Ok(Response::new(add_axes_result))
         }
+        else {
+            Err(Status::invalid_argument("Invalid axes descriptor"))
+        };
         out
     }
     //}}}
@@ -148,28 +85,20 @@ impl d2rpc::state_service_server::StateService for StateServer
         );
         //}}}
         
-        let mut out: Result<Response<d2rpc::AddItemResponse>, Status> =
-            Err(Status::invalid_argument("Invalid square descriptor"));
-
-        if let Some(square_desc_rpc) = msg.square_descriptor
+        let out: Result<Response<d2rpc::AddItemResponse>, Status> = if msg.is_valid() 
         {
-            let square_desc = SquareDescriptor {
-                origin: square_desc_rpc.origin.unwrap().into(),
-                x_axis: square_desc_rpc.x_axis.unwrap().into(),
-                y_axis: square_desc_rpc.y_axis.unwrap().into(), 
-                lenx: square_desc_rpc.lenx,
-                leny: square_desc_rpc.leny,
-                line_color: square_desc_rpc.line_color.unwrap().into(),
-                tri_color: square_desc_rpc.tri_color.unwrap().into(),   
-                cell_type: (square_desc_rpc.cell_type as i32).into()
-            };
+            let square_desc = msg.square_descriptor.unwrap().into();
             let mut state = self.state.lock().unwrap();
             let mesh_uid = state.add_square(&square_desc);
             let add_square_result = d2rpc::AddItemResponse {
                 id: mesh_uid as u64,
             };
-            out = Ok(Response::new(add_square_result));
+            Ok(Response::new(add_square_result))
         }
+        else 
+        {
+            Err(Status::invalid_argument("Invalid square descriptor"))
+        };
         out
     }
     //}}}
@@ -187,26 +116,21 @@ impl d2rpc::state_service_server::StateService for StateServer
             msg.client_name, addr
         );
         //}}}
-        let mut out: Result<Response<d2rpc::AddItemResponse>, Status> =
-            Err(Status::invalid_argument("Invalid circle descriptor"));
 
-        if let Some(circle_desc_rpc) = msg.circle_descriptor
+        let out = if msg.is_valid()
         {
-            let circle_desc = CircleDescriptor {
-                center: circle_desc_rpc.center.unwrap().into(),
-                radius: circle_desc_rpc.radius,
-                num_sides: circle_desc_rpc.num_sides,
-                line_color: circle_desc_rpc.line_color.unwrap().into(),
-                tri_color: circle_desc_rpc.tri_color.unwrap().into(),
-                cell_type: (circle_desc_rpc.cell_type as i32).into()
-            };
+            let circle_desc = msg.circle_descriptor.unwrap().into();
             let mut state = self.state.lock().unwrap();
             let mesh_uid = state.add_circle(&circle_desc);
             let add_circle_result = d2rpc::AddItemResponse {
                 id: mesh_uid as u64,
             };
-            out = Ok(Response::new(add_circle_result));
-        }
+            Ok(Response::new(add_circle_result))
+        } 
+        else 
+        {
+            Err(Status::invalid_argument("Invalid circle descriptor"))
+        };
         out
     }   
     //}}}
