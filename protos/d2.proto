@@ -61,7 +61,7 @@ message AddSquareRequest {
 }
 // .................................................................................................
 
-message CirlceDescriptor {
+message CircleDescriptor {
     Vec2 center = 1;
     float radius = 2;
     uint32 num_sides = 3;
@@ -72,7 +72,7 @@ message CirlceDescriptor {
 
 message AddCircleRequest {
     string client_name = 1;
-    CirlceDescriptor circle_descriptor = 2;
+    CircleDescriptor circle_descriptor = 2;
 }  
 // .................................................................................................
 
