@@ -2,7 +2,8 @@
 //!
 //! Because the topology of the mesh is the same in both viewers, that being lines and triangles, 
 //! much of the functionality is shared between the two. The main difference is the vertex type, 
-//! which for 2D is 2 f32s and for 3D is 3 f32s.    
+//! which for 2D is 8 f32s, (x,y) and a triplet of rgbs for lines and triangles. For 3D is 9 f32s, 
+//! ((x,y,z) and a triplet of rgbs for lines and triangles.  
 //--------------------------------------------------------------------------------------------------
 
 //{{{ crate imports 
