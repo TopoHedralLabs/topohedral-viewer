@@ -4,28 +4,29 @@
 //! application itself in ``run_topoviewer``.
 //--------------------------------------------------------------------------------------------------
 
-//{{{ crate imports 
+//{{{ crate imports
 use crate::d2;
 use crate::d3;
 //}}}
-//{{{ std imports 
+//{{{ std imports
 use core::net::SocketAddr;
 use std::fmt::Display;
 use std::net::{IpAddr, Ipv4Addr};
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 //}}}
-//{{{ dep imports 
+//{{{ dep imports
+use winit::event::WindowEvent;
 use winit::{
     self,
     application::ApplicationHandler,
     event_loop::{ControlFlow, EventLoop},
 };
-use winit::event::WindowEvent;
 
+use clap::{Parser, Subcommand, ValueEnum};
 use tokio::runtime::{Handle, Runtime};
 use tokio::task;
 use tokio::{runtime, sync::mpsc};
-use clap::{Parser, Subcommand, ValueEnum};
 
 use topohedral_tracing::*;
 //}}}
@@ -42,23 +43,18 @@ pub type State3Handle<'a> = Arc<Mutex<d3::State<'a>>>;
 /// The RPCOption enum contains the options for whether to start the RPC server and if so on
 /// what port
 #[derive(Clone, Copy, Debug, Subcommand)]
-pub enum RPCOption
-{
+pub enum RPCOption {
     /// The NoRPC option indicates that the RPC server should not be started.
     None,
     /// The WithPort option indicates that the RPC server should be started on the specified
-    WithPort
-    {
-        port: u16
-    },
+    WithPort { port: u16 },
 }
 //..................................................................................................
 //}}}
 //{{{ enum: Mode
 /// The Mode enum contains the options for whether to start the 2D or 3D viewer.
 #[derive(Clone, Copy, Debug, ValueEnum)]
-pub enum Mode
-{
+pub enum Mode {
     /// The D2 option indicates that the 2D viewer should be started.
     D2,
     /// The D3 option indicates that the 3D viewer should be started.
@@ -76,8 +72,7 @@ pub enum Mode
     version = "0.1.0",
     author = "John Alexander Ferguson, JAFerguson952@gmail.com"
 )]
-pub struct TopoViewerOptions
-{
+pub struct TopoViewerOptions {
     /// The mode option indicates whether to start the 2D or 3D viewer.
     #[arg(value_enum)]
     pub mode: Mode,
@@ -86,22 +81,15 @@ pub struct TopoViewerOptions
     pub with_rpc: RPCOption,
 }
 
-impl Display for TopoViewerOptions
-{
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter,
-    ) -> std::fmt::Result
-    {
+impl Display for TopoViewerOptions {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "Mode: ")?;
-        match self.mode
-        {
+        match self.mode {
             Mode::D2 => write!(f, "2D")?,
             Mode::D3 => write!(f, "3D")?,
         }
         write!(f, ", RPC: ")?;
-        match self.with_rpc
-        {
+        match self.with_rpc {
             RPCOption::None => write!(f, "None")?,
             RPCOption::WithPort { port } => write!(f, "RPC server on port {}", port)?,
         }
@@ -111,14 +99,13 @@ impl Display for TopoViewerOptions
 //..................................................................................................
 //}}}
 //{{{ enum: RcpStatus
-/// ENcodes the status of the RPC server. This can be non-existent if running topoviewer in non-rcp 
+/// ENcodes the status of the RPC server. This can be non-existent if running topoviewer in non-rcp
 /// mode, running if the rcp exists and is running or stopped if the rcp exists but is not running.
-enum RcpStatus
-{
+enum RcpStatus {
     /// Denotes non-existent RPC server.    
-    None, 
+    None,
     /// Denotes that the RPC server exists but is running.
-    Running, 
+    Running,
     /// Denotes that the RPC server exists but is not running.
     Stopped,
 }
@@ -127,8 +114,7 @@ enum RcpStatus
 //{{{ col: TopoViewer
 //{{{ struct: TopoViewer
 /// The TopoViewer class is the main entry point for the TopoViewer application.
-pub struct TopoViewer<'a>
-{
+pub struct TopoViewer<'a> {
     mode: Mode,
     rpc_port: Option<u16>,
     state_2d: Option<State2Handle<'a>>,
@@ -140,8 +126,7 @@ pub struct TopoViewer<'a>
 }
 //}}}
 //{{{ impl TopoViewer
-impl<'a> TopoViewer<'a>
-{
+impl<'a> TopoViewer<'a> {
     //{{{ fun: new
     /// Initialises a TopoViewer instance.
     ///
@@ -156,37 +141,36 @@ impl<'a> TopoViewer<'a>
     ///
     /// # Returns
     /// The TopoViewer instance.
-    pub fn new(topoviewer_options: &TopoViewerOptions) -> Self
-    {
+    pub fn new(topoviewer_options: &TopoViewerOptions) -> Self {
         //{{{ trace: enter
-        info!("Initialising TopoViewer with options {}", topoviewer_options);
+        info!(
+            "Initialising TopoViewer with options {}",
+            topoviewer_options
+        );
         //}}}
 
-        let state_2d = match topoviewer_options.mode
-        {
+        let state_2d = match topoviewer_options.mode {
             Mode::D2 => {
                 //{{{ trace
                 info!("Creating  2D state");
                 //}}}
                 Some(d2::State::new_arc_mutex())
-            },
+            }
             Mode::D3 => None,
         };
 
-        let state_3d = match topoviewer_options.mode
-        {
+        let state_3d = match topoviewer_options.mode {
             Mode::D2 => None,
             Mode::D3 => {
                 //{{{ trace
                 info!("Creating 3D state");
                 //}}}
                 Some(d3::State::new_arc_mutex())
-            },
+            }
         };
 
-        let tokio_runtime = match topoviewer_options.with_rpc
-        {
-            RPCOption::None =>  {
+        let tokio_runtime = match topoviewer_options.with_rpc {
+            RPCOption::None => {
                 //{{{ trace
                 info!("Building single-threaded tokio runtime");
                 //}}}
@@ -194,8 +178,8 @@ impl<'a> TopoViewer<'a>
                     .enable_all()
                     .build()
                     .unwrap()
-            },
-            RPCOption::WithPort { port: _ } =>  {
+            }
+            RPCOption::WithPort { port: _ } => {
                 //{{{ trace
                 info!("Building multi-threaded tokio runtime");
                 //}}}
@@ -204,13 +188,12 @@ impl<'a> TopoViewer<'a>
                     .enable_all()
                     .build()
                     .unwrap()
-            },
+            }
         };
 
         TopoViewer {
             mode: topoviewer_options.mode,
-            rpc_port: match topoviewer_options.with_rpc
-            {
+            rpc_port: match topoviewer_options.with_rpc {
                 RPCOption::None => None,
                 RPCOption::WithPort { port } => Some(port),
             },
@@ -224,8 +207,7 @@ impl<'a> TopoViewer<'a>
     }
     //}}}
     //{{{ fun: runtime_handle§
-    pub fn runtime_handle(&self) -> Handle
-    {
+    pub fn runtime_handle(&self) -> Handle {
         self.tokio_runtime.handle().clone()
     }
     //}}}
@@ -233,18 +215,12 @@ impl<'a> TopoViewer<'a>
     /// Returns a mutable reference to the 2D state handle, if the current mode is 2D.
     ///
     /// If the current mode is 3D, this method returns `None`.
-    pub fn get_state_2d_mut(&mut self) -> Option<State2Handle<'a>>
-    {
-        match self.mode
-        {
-            Mode::D2 =>
-            {
-                if let Some(state) = self.state_2d.as_ref()
-                {
+    pub fn get_state_2d_mut(&mut self) -> Option<State2Handle<'a>> {
+        match self.mode {
+            Mode::D2 => {
+                if let Some(state) = self.state_2d.as_ref() {
                     Some(state.clone())
-                }
-                else
-                {
+                } else {
                     None
                 }
             }
@@ -256,92 +232,65 @@ impl<'a> TopoViewer<'a>
     /// Returns a mutable reference to the 3D state handle, if the current mode is 3D.
     ///
     /// If the current mode is 2D, this method returns `None`.
-    pub fn get_state_3d_mut(&mut self) -> Option<State3Handle<'a>>
-    {
-        match self.mode
-        {
+    pub fn get_state_3d_mut(&mut self) -> Option<State3Handle<'a>> {
+        match self.mode {
             Mode::D2 => None,
-            Mode::D3 =>
-            {
-                if let Some(state) = self.state_3d.as_ref()
-                {
+            Mode::D3 => {
+                if let Some(state) = self.state_3d.as_ref() {
                     Some(state.clone())
-                }
-                else
-                {
+                } else {
                     None
                 }
             }
         }
     }
     //}}}
-    //{{{ fun: server_status 
+    //{{{ fun: server_status
     /// Returns whether the RPC server is currently running.
     ///
     /// This method checks the status of the RPC server handle for the current mode (2D or 3D) and
     /// returns `true` if the handle is still running, indicating that the RPC server is active.
-    fn server_status(&self) -> RcpStatus
-    {
+    fn server_status(&self) -> RcpStatus {
         let mut status = RcpStatus::None;
 
-        match self.mode
-        {
-            Mode::D2 =>
-            {
-                if let Some(handle) = self.rpc_handle_2d.as_ref()
-                {
-                    if handle.is_finished()
-                    {
+        match self.mode {
+            Mode::D2 => {
+                if let Some(handle) = self.rpc_handle_2d.as_ref() {
+                    if handle.is_finished() {
                         status = RcpStatus::Stopped;
-                    }
-                    else 
-                    {
+                    } else {
                         status = RcpStatus::Running;
                     }
                 }
             }
-            Mode::D3 =>
-            {
-                if let Some(handle) = self.rpc_handle_3d.as_ref()
-                {
-                    if handle.is_finished()
-                    {
+            Mode::D3 => {
+                if let Some(handle) = self.rpc_handle_3d.as_ref() {
+                    if handle.is_finished() {
                         status = RcpStatus::Stopped;
-                    }
-                    else 
-                    {
+                    } else {
                         status = RcpStatus::Running;
                     }
                 }
             }
         }
 
-        status 
+        status
     }
     //}}}
 }
 //}}}
 //{{{ impl: ApplicationHandler for TopoViewer
-impl ApplicationHandler<TopoHedralEvent> for TopoViewer<'static>
-{
+impl ApplicationHandler<TopoHedralEvent> for TopoViewer<'static> {
     //{{{ fun: resumed
-    fn resumed(
-        &mut self,
-        event_loop: &winit::event_loop::ActiveEventLoop,
-    )
-    {
+    fn resumed(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
         //{{{ trace
         info!("Resumed application");
         //}}}
-        match self.mode
-        {
+        match self.mode {
             //{{{ case: 2D
-            Mode::D2 =>
-            {
-                if let Some(state) = self.state_2d.clone()
-                {
-                    if let Some(port) = self.rpc_port
-                    {
+            Mode::D2 => {
+                if let Some(state) = self.state_2d.clone() {
+                    if let Some(port) = self.rpc_port {
                         let socket = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), port);
 
                         let state_clone = state.clone();
@@ -379,9 +328,7 @@ impl ApplicationHandler<TopoHedralEvent> for TopoViewer<'static>
             }
             //}}}
             //{{{ case: 3D
-            Mode::D3 =>
-            {}
-            //}}}
+            Mode::D3 => {} //}}}
         }
     }
     //}}}
@@ -391,22 +338,20 @@ impl ApplicationHandler<TopoHedralEvent> for TopoViewer<'static>
         event_loop: &winit::event_loop::ActiveEventLoop,
         window_id: winit::window::WindowId,
         event: WindowEvent,
-    )
-    {
-        match event
-        {
+    ) {
+        match event {
             //{{{ case: CloseRequested
-            WindowEvent::CloseRequested =>
-            {
+            WindowEvent::CloseRequested => {
                 //{{{ trace
                 info!("Close requested");
                 //}}}
-                if let Some(shutdown_sender) = self.shutdown_sender.as_ref()
-                {
+                if let Some(shutdown_sender) = self.shutdown_sender.as_ref() {
                     //{{{ trace
                     info!("Shutting down RPC server");
                     //}}}
-                    self.tokio_runtime.block_on(shutdown_sender.send(())).unwrap();
+                    self.tokio_runtime
+                        .block_on(shutdown_sender.send(()))
+                        .unwrap();
                 }
                 //{{{ trace
                 info!("Exiting Application");
@@ -415,19 +360,14 @@ impl ApplicationHandler<TopoHedralEvent> for TopoViewer<'static>
             }
             //}}}
             //{{{ default
-            _ => match self.mode
-            {
-                Mode::D2 =>
-                {
-                    if let Some(state) = self.state_2d.as_ref()
-                    {
+            _ => match self.mode {
+                Mode::D2 => {
+                    if let Some(state) = self.state_2d.as_ref() {
                         state.lock().unwrap().handle_event(&window_id, &event);
                     }
                 }
-                Mode::D3 =>
-                {
-                    if let Some(state) = self.state_3d.as_ref()
-                    {
+                Mode::D3 => {
+                    if let Some(state) = self.state_3d.as_ref() {
                         state.lock().unwrap().handle_event(&window_id, &event);
                     }
                 }
@@ -435,11 +375,9 @@ impl ApplicationHandler<TopoHedralEvent> for TopoViewer<'static>
             //}}}
         }
 
-        match self.server_status()
-        {
+        match self.server_status() {
             //{{{ case: Stopped
-            RcpStatus::Stopped =>
-            {
+            RcpStatus::Stopped => {
                 //{{{ trace
                 info!("RPC server is stopped, closing 2D window");
                 //}}}
@@ -447,17 +385,19 @@ impl ApplicationHandler<TopoHedralEvent> for TopoViewer<'static>
             }
             //}}}
             //{{{ default
-            _ => {},
+            _ => {}
             //}}}
         }
     }
     //}}}
     //{{{ fun: user_event
-    fn user_event(&mut self, event_loop: &winit::event_loop::ActiveEventLoop, event: TopoHedralEvent) {
-        match event
-        {
-            TopoHedralEvent::RcpShutdown =>
-            {
+    fn user_event(
+        &mut self,
+        event_loop: &winit::event_loop::ActiveEventLoop,
+        event: TopoHedralEvent,
+    ) {
+        match event {
+            TopoHedralEvent::RcpShutdown => {
                 //{{{ trace
                 info!("Received RPC shutdown event, exiting application");
                 //}}}
@@ -471,21 +411,68 @@ impl ApplicationHandler<TopoHedralEvent> for TopoViewer<'static>
 //..................................................................................................
 //}}}
 //{{{ enum:  TopoHedralEvent
-enum TopoHedralEvent
-{
+enum TopoHedralEvent {
     RcpShutdown,
 }
 //}}}
+//{{{ fun: locate_executable
+pub fn locate_executable() -> Result<PathBuf, std::io::Error> {
+    let project_dir = env!("CARGO_MANIFEST_DIR");
+    //{{{ trace
+    info!("Project directory: {}", project_dir);
+    //}}}
+    let mut path = PathBuf::from(project_dir);
+    if cfg!(debug_assertions) {
+        path.push("target/debug/topohedral-viewer-rpc");
+    } else {
+        path.push("target/release/topohedral-viewer-rpc");
+    }
+
+    if path.is_file() {
+        //{{{ trace
+        info!("Found executable at {}", path.display());
+        //}}}
+        Ok(path)
+    } else {
+        //{{{ trace
+        error!("Executable not found at {}", path.display());
+        //}}}
+        Err(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("Executable not found at {}", path.display()),
+        ))
+    }
+}
+//}}}
 //{{{ fun: run_topoviewer
-pub fn run_topoviewer(topoviewer_options: &TopoViewerOptions)
-{
+pub fn run_topoviewer(topoviewer_options: &TopoViewerOptions) {
     //{{{ trace
     info!("Initializing winit event loop");
     //}}}
     // initialize the winit event loop
-    let event_loop = EventLoop::<TopoHedralEvent>::with_user_event().build().expect("Failed to create winit event loop");
+    let event_loop = EventLoop::<TopoHedralEvent>::with_user_event()
+        .build()
+        .expect("Failed to create winit event loop");
     event_loop.set_control_flow(ControlFlow::Wait);
     let mut app = TopoViewer::new(topoviewer_options);
     event_loop.run_app(&mut app).unwrap();
+}
+//}}}
+
+//-------------------------------------------------------------------------------------------------
+//{{{ mod: tests
+#[cfg(test)]
+mod tests
+{
+    use super::*;
+
+    #[test]
+    fn test_locate_executable() {
+        let result = locate_executable();
+        assert!(result.is_ok());
+        let path = result.unwrap();
+        assert!(path.exists());
+        assert!(path.is_file());
+    }
 }
 //}}}
