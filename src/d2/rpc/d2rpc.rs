@@ -75,7 +75,7 @@ pub struct AddSquareRequest {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct CirlceDescriptor {
+pub struct CircleDescriptor {
     #[prost(message, optional, tag = "1")]
     pub center: ::core::option::Option<Vec2>,
     #[prost(float, tag = "2")]
@@ -95,7 +95,7 @@ pub struct AddCircleRequest {
     #[prost(string, tag = "1")]
     pub client_name: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "2")]
-    pub circle_descriptor: ::core::option::Option<CirlceDescriptor>,
+    pub circle_descriptor: ::core::option::Option<CircleDescriptor>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
