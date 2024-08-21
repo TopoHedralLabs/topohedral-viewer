@@ -15,7 +15,7 @@ use::topohedral_tracing::*;
 //}}}
 //--------------------------------------------------------------------------------------------------
 
-const ZOOM_MIN: f32 = 0.1;
+const ZOOM_MIN: f32 = 0.001;
 const ZOOM_MAX: f32 = 10.0;
 
 //{{{ collection: Camera
@@ -49,9 +49,13 @@ impl Camera
     {
         //{{{ trace
         debug!("delta by {}", delta);
+        debug!("old zoom: {}", self.zoom);
         //}}}
         self.zoom += delta;
         self.zoom = self.zoom.clamp(ZOOM_MIN, ZOOM_MAX);
+        //{{{ trace
+        debug!("new zoom: {}", self.zoom);
+        //}}}
     }
     //}}}
     //{{{ fun: rotate
@@ -127,9 +131,9 @@ impl Default for ViewOptions
     fn default() -> Self
     {
         Self {
-            key_pan_delta: 0.5,
+            key_pan_delta: 0.25,
             rotate_delta: rad(2.5),
-            zoom_speed: 0.005,
+            zoom_speed: 0.001,
         }
     }
 }
@@ -254,12 +258,14 @@ impl EventController
             }
             else
             {
+                let pan_dist = view.options.key_pan_delta * (1.0 / (view.camera.zoom)).sqrt();
+
                 let displ = match self.key_stroke_state
                 {
-                    KeyStrokeState::Left => -view.options.key_pan_delta * view.camera.x_axis,
-                    KeyStrokeState::Right => view.options.key_pan_delta * view.camera.x_axis,
-                    KeyStrokeState::Up =>  view.options.key_pan_delta * view.camera.y_axis,
-                    KeyStrokeState::Down =>  -view.options.key_pan_delta * view.camera.y_axis,
+                    KeyStrokeState::Left => pan_dist * view.camera.x_axis,
+                    KeyStrokeState::Right => -pan_dist * view.camera.x_axis,
+                    KeyStrokeState::Up =>  -pan_dist * view.camera.y_axis,
+                    KeyStrokeState::Down =>  pan_dist * view.camera.y_axis,
                     _ => Vec2::zeros(),
                 };
                 view.camera.pan(displ[0], displ[1]);
@@ -270,7 +276,8 @@ impl EventController
         // handle mouse wheel
         if let Some(mwd) = self.mouse_wheel_delta
         {
-            view.camera.zoom(mwd * view.options.zoom_speed);
+            let zoom_delta = mwd * view.options.zoom_speed * view.camera.zoom.sqrt();
+            view.camera.zoom(zoom_delta);
             self.mouse_wheel_delta = None;
         }
 
