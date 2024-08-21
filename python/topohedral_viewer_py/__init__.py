@@ -7,4 +7,4 @@ parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
 
 # Import the Client class from client.py
-from .client import Client, launch_server
+from .client import Client2D, launch_server
