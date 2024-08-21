@@ -11,4 +11,4 @@ mod rpc;
 pub use vertex::{Vertex, VertexDescriptor};
 pub use mesh::{AxesDescriptor, Mesh, SquareDescriptor, CircleDescriptor, Mesh2D};
 pub use state::{State, State2D};
-pub use rpc::{run_server};
+pub use rpc::{run_server, Client2D};
