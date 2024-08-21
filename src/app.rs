@@ -423,9 +423,9 @@ pub fn locate_executable() -> Result<PathBuf, std::io::Error> {
     //}}}
     let mut path = PathBuf::from(project_dir);
     if cfg!(debug_assertions) {
-        path.push("target/debug/topohedral-viewer-rpc");
+        path.push("../target/debug/topohedral-viewer-rpc");
     } else {
-        path.push("target/release/topohedral-viewer-rpc");
+        path.push("../target/release/topohedral-viewer-rpc");
     }
 
     if path.is_file() {
