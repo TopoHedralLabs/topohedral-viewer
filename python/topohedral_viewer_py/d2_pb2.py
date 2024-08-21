@@ -14,21 +14,37 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x08\x64\x32.proto\x12\x05\x64\x32rpc\"\x1c\n\x04Vec2\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\"\x89\x01\n\x0e\x41xesDescriptor\x12\x1b\n\x06origin\x18\x01 \x01(\x0b\x32\x0b.d2rpc.Vec2\x12\x1b\n\x06x_axis\x18\x02 \x01(\x0b\x32\x0b.d2rpc.Vec2\x12\x1b\n\x06y_axis\x18\x03 \x01(\x0b\x32\x0b.d2rpc.Vec2\x12\x0f\n\x07neg_len\x18\x04 \x01(\x02\x12\x0f\n\x07pos_len\x18\x05 \x01(\x02\"@\n\x0e\x41\x64\x64\x41xesRequest\x12.\n\x0f\x61xes_descriptor\x18\x01 \x01(\x0b\x32\x15.d2rpc.AxesDescriptor\"\"\n\x0f\x41\x64\x64\x41xesResponse\x12\x0f\n\x07\x61xes_id\x18\x01 \x01(\x04\x32H\n\x0cStateService\x12\x38\n\x07\x41\x64\x64\x41xes\x12\x15.d2rpc.AddAxesRequest\x1a\x16.d2rpc.AddAxesResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x08\x64\x32.proto\x12\x05\x64\x32rpc\"(\n\x05\x43olor\x12\t\n\x01r\x18\x01 \x01(\x02\x12\t\n\x01g\x18\x02 \x01(\x02\x12\t\n\x01\x62\x18\x03 \x01(\x02\"\x1c\n\x04Vec2\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\"\x1d\n\x0f\x41\x64\x64ItemResponse\x12\n\n\x02id\x18\x01 \x01(\x04\"\x89\x01\n\x0e\x41xesDescriptor\x12\x1b\n\x06origin\x18\x01 \x01(\x0b\x32\x0b.d2rpc.Vec2\x12\x1b\n\x06x_axis\x18\x02 \x01(\x0b\x32\x0b.d2rpc.Vec2\x12\x1b\n\x06y_axis\x18\x03 \x01(\x0b\x32\x0b.d2rpc.Vec2\x12\x0f\n\x07neg_len\x18\x04 \x01(\x02\x12\x0f\n\x07pos_len\x18\x05 \x01(\x02\"U\n\x0e\x41\x64\x64\x41xesRequest\x12\x13\n\x0b\x63lient_name\x18\x01 \x01(\t\x12.\n\x0f\x61xes_descriptor\x18\x02 \x01(\x0b\x32\x15.d2rpc.AxesDescriptor\"\xec\x01\n\x10SquareDescriptor\x12\x1b\n\x06origin\x18\x01 \x01(\x0b\x32\x0b.d2rpc.Vec2\x12\x1b\n\x06x_axis\x18\x02 \x01(\x0b\x32\x0b.d2rpc.Vec2\x12\x1b\n\x06y_axis\x18\x03 \x01(\x0b\x32\x0b.d2rpc.Vec2\x12\x0c\n\x04lenx\x18\x04 \x01(\x02\x12\x0c\n\x04leny\x18\x05 \x01(\x02\x12 \n\nline_color\x18\x06 \x01(\x0b\x32\x0c.d2rpc.Color\x12\x1f\n\ttri_color\x18\x07 \x01(\x0b\x32\x0c.d2rpc.Color\x12\"\n\tcell_type\x18\x08 \x01(\x0e\x32\x0f.d2rpc.CellType\"[\n\x10\x41\x64\x64SquareRequest\x12\x13\n\x0b\x63lient_name\x18\x01 \x01(\t\x12\x32\n\x11square_descriptor\x18\x02 \x01(\x0b\x32\x17.d2rpc.SquareDescriptor\"\xb9\x01\n\x10\x43irlceDescriptor\x12\x1b\n\x06\x63\x65nter\x18\x01 \x01(\x0b\x32\x0b.d2rpc.Vec2\x12\x0e\n\x06radius\x18\x02 \x01(\x02\x12\x11\n\tnum_sides\x18\x03 \x01(\r\x12 \n\nline_color\x18\x04 \x01(\x0b\x32\x0c.d2rpc.Color\x12\x1f\n\ttri_color\x18\x05 \x01(\x0b\x32\x0c.d2rpc.Color\x12\"\n\tcell_type\x18\x06 \x01(\x0e\x32\x0f.d2rpc.CellType\"[\n\x10\x41\x64\x64\x43ircleRequest\x12\x13\n\x0b\x63lient_name\x18\x01 \x01(\t\x12\x32\n\x11\x63ircle_descriptor\x18\x02 \x01(\x0b\x32\x17.d2rpc.CirlceDescriptor\"(\n\x11KillServerRequest\x12\x13\n\x0b\x63lient_name\x18\x01 \x01(\t\"\x14\n\x12KillServerResponse*,\n\x08\x43\x65llType\x12\x08\n\x04NONE\x10\x00\x12\x08\n\x04LINE\x10\x01\x12\x0c\n\x08TRIANGLE\x10\x02\x32\x87\x02\n\x0cStateService\x12\x38\n\x07\x41\x64\x64\x41xes\x12\x15.d2rpc.AddAxesRequest\x1a\x16.d2rpc.AddItemResponse\x12<\n\tAddSquare\x12\x17.d2rpc.AddSquareRequest\x1a\x16.d2rpc.AddItemResponse\x12<\n\tAddCircle\x12\x17.d2rpc.AddCircleRequest\x1a\x16.d2rpc.AddItemResponse\x12\x41\n\nKillServer\x12\x18.d2rpc.KillServerRequest\x1a\x19.d2rpc.KillServerResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'd2_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_VEC2']._serialized_start=19
-  _globals['_VEC2']._serialized_end=47
-  _globals['_AXESDESCRIPTOR']._serialized_start=50
-  _globals['_AXESDESCRIPTOR']._serialized_end=187
-  _globals['_ADDAXESREQUEST']._serialized_start=189
-  _globals['_ADDAXESREQUEST']._serialized_end=253
-  _globals['_ADDAXESRESPONSE']._serialized_start=255
-  _globals['_ADDAXESRESPONSE']._serialized_end=289
-  _globals['_STATESERVICE']._serialized_start=291
-  _globals['_STATESERVICE']._serialized_end=363
+  _globals['_CELLTYPE']._serialized_start=1026
+  _globals['_CELLTYPE']._serialized_end=1070
+  _globals['_COLOR']._serialized_start=19
+  _globals['_COLOR']._serialized_end=59
+  _globals['_VEC2']._serialized_start=61
+  _globals['_VEC2']._serialized_end=89
+  _globals['_ADDITEMRESPONSE']._serialized_start=91
+  _globals['_ADDITEMRESPONSE']._serialized_end=120
+  _globals['_AXESDESCRIPTOR']._serialized_start=123
+  _globals['_AXESDESCRIPTOR']._serialized_end=260
+  _globals['_ADDAXESREQUEST']._serialized_start=262
+  _globals['_ADDAXESREQUEST']._serialized_end=347
+  _globals['_SQUAREDESCRIPTOR']._serialized_start=350
+  _globals['_SQUAREDESCRIPTOR']._serialized_end=586
+  _globals['_ADDSQUAREREQUEST']._serialized_start=588
+  _globals['_ADDSQUAREREQUEST']._serialized_end=679
+  _globals['_CIRLCEDESCRIPTOR']._serialized_start=682
+  _globals['_CIRLCEDESCRIPTOR']._serialized_end=867
+  _globals['_ADDCIRCLEREQUEST']._serialized_start=869
+  _globals['_ADDCIRCLEREQUEST']._serialized_end=960
+  _globals['_KILLSERVERREQUEST']._serialized_start=962
+  _globals['_KILLSERVERREQUEST']._serialized_end=1002
+  _globals['_KILLSERVERRESPONSE']._serialized_start=1004
+  _globals['_KILLSERVERRESPONSE']._serialized_end=1024
+  _globals['_STATESERVICE']._serialized_start=1073
+  _globals['_STATESERVICE']._serialized_end=1336
 # @@protoc_insertion_point(module_scope)
