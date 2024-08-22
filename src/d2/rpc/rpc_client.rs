@@ -4,7 +4,7 @@
 //--------------------------------------------------------------------------------------------------
 
 //{{{ crate imports 
-use super::super::mesh::{AxesDescriptor, SquareDescriptor, CircleDescriptor};
+use super::super::mesh::{AxesDescriptor, SquareDescriptor, CircleDescriptor, Mesh};
 use super::super::state::{State, State2D};
 use crate::common::Vec2;
 use super::d2rpc::state_service_client::StateServiceClient;
@@ -117,6 +117,19 @@ impl Client2D
             }
         );
         let response = self.tokio_runtime.block_on(self.stub.add_circle(request))?;
+        Ok(response.into_inner().id as usize)
+    }
+
+    pub fn add_mesh<'a>(&mut self, mesh: Mesh<'a>) -> Result<usize, Error>
+    {
+        let mesh_desc_rpc: d2rpc::MeshDescriptor = mesh.clone().into();
+        let request = Request::new(
+            d2rpc::AddMeshRequest{
+                client_name: self.client_name.clone(),
+                mesh_descriptor: Some(mesh_desc_rpc)
+            }
+        );
+        let response = self.tokio_runtime.block_on(self.stub.add_mesh(request))?;
         Ok(response.into_inner().id as usize)
     }
 

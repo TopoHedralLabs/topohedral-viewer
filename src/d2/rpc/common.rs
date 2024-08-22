@@ -3,10 +3,12 @@
 //! 
 //--------------------------------------------------------------------------------------------------
 
+use std::marker::PhantomData;
+
 //{{{ crate imports 
 use crate::common::{Vec2, Color, CellType, Validated};
 use super::d2rpc;
-use super::super::mesh::{AxesDescriptor, SquareDescriptor, CircleDescriptor};
+use super::super::mesh::{AxesDescriptor, SquareDescriptor, CircleDescriptor, Mesh};
 //}}}
 //{{{ std imports 
 //}}}
@@ -264,6 +266,58 @@ impl From<CircleDescriptor> for d2rpc::CircleDescriptor
 }
 //}}}
 
+//{{{ impl: Validated for d2rpc::AddMeshRequest
+impl Validated for d2rpc::AddMeshRequest
+{
+    fn is_valid(&self) -> bool
+    {
+        let mut is_val = true;
+        match self.mesh_descriptor
+        {
+            Some(ref mesh_descriptor) =>
+            {
+                is_val &= mesh_descriptor.vertices.len() > 0;
+                is_val &= mesh_descriptor.indices.len() > 0;
+            }
+            None =>
+            {
+                is_val = false;
+            }
+        }
+        is_val
+    }
+}
+//}}}
+//{{{ impl From<d2rpc::MeshDescriptor> for Mesh
+impl<'a> From<d2rpc::MeshDescriptor> for Mesh<'a>
+{
+    fn from(mesh_desc: d2rpc::MeshDescriptor) -> Self
+    {
+        let mesh= Mesh {
+            vertices: mesh_desc.vertices,
+            indices: mesh_desc.indices,
+            cell_type: (mesh_desc.cell_type as i32).into(),
+            uid: 0,
+            phant: PhantomData,
+        };
+        mesh
+    }
+}
+//}}}
+//{{{ impl From<Mesh> for d2rpc::MeshDescriptor
+impl<'a> From<Mesh<'a>> for d2rpc::MeshDescriptor
+{
+    fn from(mesh: Mesh<'a>) -> Self
+    {
+        let mesh_desc = d2rpc::MeshDescriptor {
+            vertices: mesh.vertices,
+            indices: mesh.indices,
+            cell_type: (mesh.cell_type as i32).into(),
+        };
+        mesh_desc
+    }
+}
+//}}}
 //-------------------------------------------------------------------------------------------------
 //{{{ mod: tests
 #[cfg(test)]

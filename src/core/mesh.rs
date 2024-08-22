@@ -85,13 +85,13 @@ pub struct MeshCore<'a, V>
 where
     V: VertexCore + Deserialize<'a> + Serialize,
 {
-    vertices: Vec<f32>,
-    indices: Vec<u32>,
-    cell_type: CellType,
+    pub(crate) vertices: Vec<f32>,
+    pub(crate) indices: Vec<u32>,
+    pub(crate) cell_type: CellType,
     #[serde(skip)]
     pub uid: usize,
     #[serde(skip)]
-    phant: PhantomData<&'a V>,
+    pub(crate) phant: PhantomData<&'a V>,
 }
 //}}}
 //{{{ impl: MeshCore

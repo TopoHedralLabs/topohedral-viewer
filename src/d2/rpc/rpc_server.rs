@@ -12,7 +12,7 @@
 //{{{ crate imports 
 use super::d2rpc;
 use super::common::*;
-use super::super::mesh::{AxesDescriptor, SquareDescriptor, CircleDescriptor};
+use super::super::mesh::{AxesDescriptor, SquareDescriptor, CircleDescriptor, Mesh};
 use super::super::state::{State, State2D};
 use crate::common::Validated;
 //}}}
@@ -133,6 +133,54 @@ impl d2rpc::state_service_server::StateService for StateServer
         };
         out
     }   
+    //}}}
+    //{{{ fun: add_mesh
+    async fn add_mesh(
+        &self,
+        request: Request<d2rpc::AddMeshRequest>,
+    ) -> Result<Response<d2rpc::AddItemResponse>, Status>
+    {
+        let addr = request.remote_addr();
+        let msg = request.into_inner();
+        //{{{ trace
+        info!(
+            "Received add_axes request from {} on port {:?}",
+            msg.client_name, addr
+        );
+        //}}}
+        let out = if msg.is_valid()
+        {
+            let mesh: Mesh = msg.mesh_descriptor.unwrap().into();
+            let mut state = self.state.lock().unwrap();
+            let mesh_uid = state.add_mesh(mesh);
+            let add_mesh_result = d2rpc::AddItemResponse {
+                id: mesh_uid as u64,
+            };
+            Ok(Response::new(add_mesh_result))
+        }
+        else 
+        {
+            Err(Status::invalid_argument("Invalid mesh descriptor"))
+        };
+        out
+    }
+    //}}}
+    //{{{ fun: clear
+    async fn clear(
+        &self,
+        request: Request<d2rpc::ClearRequest>,
+    ) -> Result<Response<d2rpc::ClearResponse>, Status>
+    {
+        let addr = request.remote_addr();
+        let msg = request.into_inner();
+        //{{{ trace
+        info!(
+            "Received clear_all request from {} on port {:?}",
+            msg.client_name, addr
+        );
+        //}}}
+        todo!()
+    }
     //}}}
     //{{{ fun: kill_server
     async fn kill_server(

@@ -76,6 +76,25 @@ message AddCircleRequest {
 }  
 // .................................................................................................
 
+message MeshDescriptor {
+    repeated float vertices = 1;
+    repeated uint32 indices = 2;
+    CellType cell_type = 3;
+}
+
+message AddMeshRequest {
+    string client_name = 1;
+    MeshDescriptor mesh_descriptor = 2;
+}
+// .................................................................................................
+
+message ClearRequest {
+    string client_name = 1;
+}
+
+message ClearResponse {}
+// .................................................................................................
+
 message KillServerRequest {
     string client_name = 1;
 }
@@ -83,9 +102,13 @@ message KillServerRequest {
 message KillServerResponse {}
 // .................................................................................................
 
+
+
 service StateService {
     rpc AddAxes(AddAxesRequest) returns (AddItemResponse);
     rpc AddSquare(AddSquareRequest) returns (AddItemResponse);
     rpc AddCircle(AddCircleRequest) returns (AddItemResponse);
+    rpc AddMesh(AddMeshRequest) returns (AddItemResponse);
+    rpc Clear(ClearRequest) returns (ClearResponse);    
     rpc KillServer(KillServerRequest) returns (KillServerResponse);
 }

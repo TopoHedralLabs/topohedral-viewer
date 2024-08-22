@@ -99,6 +99,33 @@ pub struct AddCircleRequest {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct MeshDescriptor {
+    #[prost(float, repeated, tag = "1")]
+    pub vertices: ::prost::alloc::vec::Vec<f32>,
+    #[prost(uint32, repeated, tag = "2")]
+    pub indices: ::prost::alloc::vec::Vec<u32>,
+    #[prost(enumeration = "CellType", tag = "3")]
+    pub cell_type: i32,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct AddMeshRequest {
+    #[prost(string, tag = "1")]
+    pub client_name: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub mesh_descriptor: ::core::option::Option<MeshDescriptor>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ClearRequest {
+    #[prost(string, tag = "1")]
+    pub client_name: ::prost::alloc::string::String,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ClearResponse {}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct KillServerRequest {
     #[prost(string, tag = "1")]
     pub client_name: ::prost::alloc::string::String,
@@ -295,6 +322,50 @@ pub mod state_service_client {
                 .insert(GrpcMethod::new("d2rpc.StateService", "AddCircle"));
             self.inner.unary(req, path, codec).await
         }
+        pub async fn add_mesh(
+            &mut self,
+            request: impl tonic::IntoRequest<super::AddMeshRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::AddItemResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/d2rpc.StateService/AddMesh",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("d2rpc.StateService", "AddMesh"));
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn clear(
+            &mut self,
+            request: impl tonic::IntoRequest<super::ClearRequest>,
+        ) -> std::result::Result<tonic::Response<super::ClearResponse>, tonic::Status> {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static("/d2rpc.StateService/Clear");
+            let mut req = request.into_request();
+            req.extensions_mut().insert(GrpcMethod::new("d2rpc.StateService", "Clear"));
+            self.inner.unary(req, path, codec).await
+        }
         pub async fn kill_server(
             &mut self,
             request: impl tonic::IntoRequest<super::KillServerRequest>,
@@ -341,6 +412,14 @@ pub mod state_service_server {
             &self,
             request: tonic::Request<super::AddCircleRequest>,
         ) -> std::result::Result<tonic::Response<super::AddItemResponse>, tonic::Status>;
+        async fn add_mesh(
+            &self,
+            request: tonic::Request<super::AddMeshRequest>,
+        ) -> std::result::Result<tonic::Response<super::AddItemResponse>, tonic::Status>;
+        async fn clear(
+            &self,
+            request: tonic::Request<super::ClearRequest>,
+        ) -> std::result::Result<tonic::Response<super::ClearResponse>, tonic::Status>;
         async fn kill_server(
             &self,
             request: tonic::Request<super::KillServerRequest>,
@@ -551,6 +630,97 @@ pub mod state_service_server {
                     let fut = async move {
                         let inner = inner.0;
                         let method = AddCircleSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/d2rpc.StateService/AddMesh" => {
+                    #[allow(non_camel_case_types)]
+                    struct AddMeshSvc<T: StateService>(pub Arc<T>);
+                    impl<
+                        T: StateService,
+                    > tonic::server::UnaryService<super::AddMeshRequest>
+                    for AddMeshSvc<T> {
+                        type Response = super::AddItemResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::AddMeshRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StateService>::add_mesh(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = AddMeshSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/d2rpc.StateService/Clear" => {
+                    #[allow(non_camel_case_types)]
+                    struct ClearSvc<T: StateService>(pub Arc<T>);
+                    impl<
+                        T: StateService,
+                    > tonic::server::UnaryService<super::ClearRequest> for ClearSvc<T> {
+                        type Response = super::ClearResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::ClearRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StateService>::clear(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = ClearSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
