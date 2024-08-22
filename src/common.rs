@@ -349,6 +349,35 @@ impl Default for CellType {
 }
 //..................................................................................................
 //}}}
+
+//{{{ impl: From<i32> for CellType
+impl  From<i32> for CellType
+{
+    fn from(c: i32) -> Self
+    {
+        match c
+        {
+            2 => CellType::Triangle,
+            1 =>  CellType::Line,
+            _ => CellType::None,
+        }
+    }
+}
+//}}}
+//{{{ impl: From<CellType> for i32
+impl From<CellType> for i32
+{
+    fn from(c: CellType) -> Self
+    {
+        match c
+        {
+            CellType::Triangle => 2,
+            CellType::Line => 1,
+            CellType::None => 0,
+        }
+    }
+}
+//}}}
 //}}}
 //{{{ trait: Validated
 pub trait Validated {
