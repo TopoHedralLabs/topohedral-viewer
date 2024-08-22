@@ -1,6 +1,16 @@
-//! This module contains all the functionality for rendering 2D scenes.
+//! Short Description of module
 //!
+//! Longer description of module
 //--------------------------------------------------------------------------------------------------
+
+//{{{ crate imports 
+//}}}
+//{{{ std imports 
+//}}}
+//{{{ dep imports 
+//}}}
+//--------------------------------------------------------------------------------------------------
+
 
 mod camera;
 mod vertex;
