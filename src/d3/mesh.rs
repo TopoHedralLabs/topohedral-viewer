@@ -5,7 +5,7 @@
 //--------------------------------------------------------------------------------------------------
 
 //{{{ crate imports 
-use crate::common::{self, Color, Vec3};
+use crate::common::{self, Color, Vec3, CellType};
 use crate::d3::vertex::{Vertex, VertexDescriptor};
 use crate::core::MeshCore;
 //}}}
@@ -23,11 +23,28 @@ pub type Mesh<'a> = MeshCore<'a, Vertex>;
 pub struct LineDescriptor
 {
     /// First endpoint of line
-    pub p1: Vec3,
+    pub v1: Vec3,
     /// Second endpoint of line
-    pub p2: Vec3,
+    pub v2: Vec3,
     /// Color of line
     pub color: Color,
+}
+//}}}
+//{{{ struct: TriangleDescriptor
+pub struct TriangleDescriptor
+{
+    /// First vertex of triangle
+    pub v1: Vec3,
+    /// Second vertex of triangle
+    pub v2: Vec3,
+    /// Third vertex of triangle
+    pub v3: Vec3,
+    /// Color of line
+    pub line_color: Color,
+    /// Color of triangle
+    pub tri_color: Color,
+    /// Type of 
+    pub cell_type: CellType,
 }
 //}}}
 //{{{ struct: PlaneDescriptor
@@ -51,6 +68,8 @@ pub struct PlaneDescriptor
     pub line_color: Color,
     /// Color of triangles in render
     pub tri_color: Color,
+    /// Type of cell
+    pub cell_type: CellType,    
 }
 //}}}
 //{{{ struct: CuboidDescriptor
@@ -60,11 +79,11 @@ pub struct CuboidDescriptor
     /// The bottom left corner of the cuboid
     pub origin: Vec3,
     /// X-vector for the cuboid
-    pub x: Vec3,
+    pub x_axis: Vec3,
     /// Y-vector for the cuboid
-    pub y: Vec3,
+    pub y_axis: Vec3,
     /// Z-vector for the cuboid
-    pub z: Vec3,
+    pub z_axis: Vec3,
     /// length along x
     pub lenx: f32,
     /// length along y
@@ -75,9 +94,11 @@ pub struct CuboidDescriptor
     pub line_color: Color,
     /// Color of triangles in render
     pub tri_color: Color,
+    /// Type of cell
+    pub cell_type: CellType,
 }
 //}}}
-//{{{ struct: SphereDescriptor
+//{{{ struct: CylinderDescriptor
 /// This struct encapsulates the geometric information needed to fully specify a cylinder.
 pub struct CylinderDescriptor
 {
@@ -134,6 +155,7 @@ pub struct AxesDescriptor
 pub trait Mesh3D<'a>
 {
     fn create_line(line_disc: &LineDescriptor) -> Self;
+    fn create_triangle(triangle_disc: &TriangleDescriptor) -> Self; 
     fn create_plane(plane_disc: &PlaneDescriptor) -> Self;
     fn create_cuboid(cuboid: &CuboidDescriptor) -> Self;
     fn create_cylinder(cylinder: &CylinderDescriptor) -> Self;  
@@ -157,21 +179,21 @@ pub trait Mesh3D<'a>
     );
 }
 //}}}
-//{{{ impl: Mesh3D for Mes
+//{{{ impl: Mesh3D for Mesh
 impl<'a> Mesh3D<'a> for Mesh<'a>
 {
-
+    //{{{ fn: create_line
     fn create_line(line_disc: &LineDescriptor) -> Self
     {
         let mut out = Mesh::from_num_lines(1);
         let v1 = Vertex::new(&VertexDescriptor {
-            position: line_disc.p1,
+            position: line_disc.v1,
             normal: Vec3::zeros(),
             line_color: line_disc.color,
             triangle_color: line_disc.color,
         });
         let v2 = Vertex::new(&VertexDescriptor {
-            position: line_disc.p2,
+            position: line_disc.v2,
             normal: Vec3::zeros(),
             line_color: line_disc.color,
             triangle_color: line_disc.color,
@@ -181,8 +203,38 @@ impl<'a> Mesh3D<'a> for Mesh<'a>
         out.append_indices(&[0, 1]);
         out
     }
-
-    fn create_plane(plane_disc: &PlaneDescriptor) -> Self { 
+    //}}}
+    //{{{ fn: create_triangle
+    fn create_triangle(triangle_disc: &TriangleDescriptor) -> Self {
+        let mut out = Mesh::from_num_triangles(1);
+        let v1 = Vertex::new(&VertexDescriptor {
+            position: triangle_disc.v1,
+            normal: Vec3::zeros(),
+            line_color: triangle_disc.line_color,
+            triangle_color: triangle_disc.tri_color,
+        });
+        let v2 = Vertex::new(&VertexDescriptor {
+            position: triangle_disc.v2,
+            normal: Vec3::zeros(),
+            line_color: triangle_disc.line_color,
+            triangle_color: triangle_disc.tri_color,
+        });
+        let v3 = Vertex::new(&VertexDescriptor {
+            position: triangle_disc.v3,
+            normal: Vec3::zeros(),
+            line_color: triangle_disc.line_color,
+            triangle_color: triangle_disc.tri_color,
+        });
+        out.append_vertex(&v1);
+        out.append_vertex(&v2);
+        out.append_vertex(&v3);
+        out.append_indices(&[0, 1, 2]);
+        out
+    }
+    //}}}
+    //{{{ fn: create_plane
+    fn create_plane(plane_disc: &PlaneDescriptor) -> Self 
+    {
 
         let mut out = Self::from_num_triangles(2);
 
@@ -206,7 +258,8 @@ impl<'a> Mesh3D<'a> for Mesh<'a>
         out
 
     }
-
+    //}}}
+    //{{{ fn: create_cuboid
     fn create_cuboid(cuboid_disc: &CuboidDescriptor) -> Self
     {
         let mut out = Self::from_num_triangles(12);
@@ -215,9 +268,9 @@ impl<'a> Mesh3D<'a> for Mesh<'a>
         let tc = cuboid_disc.tri_color;
 
         let o = cuboid_disc.origin;
-        let dx = cuboid_disc.x * cuboid_disc.lenx;
-        let dy = cuboid_disc.y * cuboid_disc.leny;
-        let dz = cuboid_disc.z * cuboid_disc.lenz;
+        let dx = cuboid_disc.x_axis * cuboid_disc.lenx;
+        let dy = cuboid_disc.y_axis * cuboid_disc.leny;
+        let dz = cuboid_disc.z_axis * cuboid_disc.lenz;
 
         let v0 = o;
         let v1 = o + dx;
@@ -249,7 +302,8 @@ impl<'a> Mesh3D<'a> for Mesh<'a>
 
         out
     }
-
+    //}}}
+    //{{{ fn: create_cylinder
     fn create_cylinder(cyl_disc: &CylinderDescriptor) -> Self
     {
         let n = cyl_disc.num_sides;
@@ -341,7 +395,8 @@ impl<'a> Mesh3D<'a> for Mesh<'a>
 
         out
     }
-
+    //}}}
+    //{{{ fn: create_sphere
     fn create_sphere(sphere_disc: &SphereDescriptor) -> Self
     {
         let nt = 2 * sphere_disc.n_lat * sphere_disc.n_long;
@@ -349,7 +404,8 @@ impl<'a> Mesh3D<'a> for Mesh<'a>
 
         out
     }
-
+    //}}}
+    //{{{ fn: create_axes
     fn create_axes(axes_disc: &AxesDescriptor) -> Self
     {
         let r = 0.01;
@@ -408,8 +464,8 @@ impl<'a> Mesh3D<'a> for Mesh<'a>
 
         out
     }
-
-
+    //}}}
+    //{{{ fn: add_line
     fn add_line(
         &mut self,
         v1: &Vec3,
@@ -437,7 +493,8 @@ impl<'a> Mesh3D<'a> for Mesh<'a>
             triangle_color: *tri_color,
         }));
     }
-
+    //}}}
+    //{{{ fn: add_triangle
     fn add_triangle(
         &mut self,
         v1: &Vec3,
@@ -475,6 +532,7 @@ impl<'a> Mesh3D<'a> for Mesh<'a>
             triangle_color: *tri_color,
         }));
     }
+    //}}}
 }
 //..................................................................................................
 //}}}
@@ -493,14 +551,15 @@ mod tests
     {
         let cube = Mesh::create_cuboid(&CuboidDescriptor {
             origin: Vec3::new(0.1, 0.1, 0.0),
-            x: Vec3::x(),
-            y: Vec3::y(),
-            z: Vec3::z(),
+            x_axis: Vec3::x(),
+            y_axis: Vec3::y(),
+            z_axis: Vec3::z(),
             lenx: 1.0,
             leny: 1.0,
             lenz: 1.0,
             line_color: Color::White,
             tri_color: Color::Green,
+            cell_type: CellType::Triangle,
         });
     }
 
@@ -524,14 +583,15 @@ mod tests
     {
         let cube = Mesh::create_cuboid(&CuboidDescriptor {
             origin: Vec3::new(0.1, 0.1, 0.0),
-            x: Vec3::x(),
-            y: Vec3::y(),
-            z: Vec3::z(),
+            x_axis: Vec3::x(),
+            y_axis: Vec3::y(),
+            z_axis: Vec3::z(),
             lenx: 1.0,
             leny: 1.0,
             lenz: 1.0,
             line_color: Color::White,
             tri_color: Color::Green,
+            cell_type: CellType::Triangle,
         });
 
         // let mut vertex_view = cube.vertex_view_mut(0);
