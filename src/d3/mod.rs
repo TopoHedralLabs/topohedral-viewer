@@ -1,7 +1,21 @@
+//! Short Description of module
+//!
+//! Longer description of module
+//--------------------------------------------------------------------------------------------------
+
+//{{{ crate imports 
+//}}}
+//{{{ std imports 
+//}}}
+//{{{ dep imports 
+//}}}
+//--------------------------------------------------------------------------------------------------
+
 mod camera;
 mod mesh;
 mod state;
 mod vertex;
+mod rpc;
 
 pub use vertex::{Vertex, VertexDescriptor};
 pub use mesh::{
