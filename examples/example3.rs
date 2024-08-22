@@ -38,9 +38,6 @@ fn main()
     mesh.add_triangle(&v1, &v2, &v3, &Color::Black, &Color::Cyan);
     let mesh_id = client.add_mesh(mesh).unwrap();
 
-
-
-
     //{{{ trace
     info!(target: "example3", "axes_id = {}", axes_id);
     info!(target: "example3", "square_id = {}", square_id);

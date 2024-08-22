@@ -206,7 +206,7 @@ impl<'a> TopoViewer<'a> {
         }
     }
     //}}}
-    //{{{ fun: runtime_handle§
+    //{{{ fun: runtime_handle
     pub fn runtime_handle(&self) -> Handle {
         self.tokio_runtime.handle().clone()
     }

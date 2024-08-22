@@ -8,7 +8,8 @@ mod mesh;
 mod state;
 mod rpc;
 
-pub use vertex::{Vertex, VertexDescriptor};
-pub use mesh::{AxesDescriptor, Mesh, SquareDescriptor, CircleDescriptor, Mesh2D};
-pub use state::{State, State2D};
-pub use rpc::{run_server, Client2D};
+pub(crate) use state::State;
+pub(crate) use rpc::run_server;
+
+pub use mesh::{AxesDescriptor,SquareDescriptor, CircleDescriptor, Mesh, Mesh2D};
+pub use rpc::Client2D;
