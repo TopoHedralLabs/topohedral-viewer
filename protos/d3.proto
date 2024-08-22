@@ -1,0 +1,188 @@
+
+syntax = "proto3";
+
+package d3rpc;
+
+
+message Color
+{
+    float r = 1;
+    float g = 2;
+    float b = 3;
+}
+//..................................................................................................
+
+message Vec3 {
+    float x = 1;
+    float y = 2;
+    float z = 3;
+}
+//..................................................................................................
+
+enum CellType {
+    NONE = 0;
+    LINE = 1;
+    TRIANGLE = 2;
+}
+//..................................................................................................
+
+message AddItemResponse {
+    uint64 id = 1;
+}
+//..................................................................................................
+
+message LineDescriptor {
+    Vec3 v1 = 1;
+    Vec3 v2 = 2;
+    Color color = 3;
+}
+
+message AddLineRequest {
+    string client_name = 1;
+    LineDescriptor line_descriptor = 2;
+}
+//..................................................................................................
+
+message TriangleDescriptor {
+    Vec3 v1 = 1;
+    Vec3 v2 = 2;
+    Vec3 v3 = 3;
+    Color line_color = 4;
+    Color tri_color = 5;
+    CellType cell_type = 6;
+}
+
+message AddTriangleRequest {
+    string client_name = 1;
+    TriangleDescriptor triangle_descriptor = 2;
+}
+//..................................................................................................
+
+message PlaneDescriptor {   
+    Vec3 origin = 1;
+    Vec3 x_axis = 2;
+    Vec3 y_axis = 3;
+    float x_min = 4;
+    float x_max = 5;
+    float y_min = 6;
+    float y_max = 7;
+    Color line_color = 8;
+    Color tri_color = 9;
+    CellType cell_type = 10;
+}
+
+message AddPlaneRequest {
+    string client_name = 1;
+    PlaneDescriptor plane_descriptor = 2;
+}
+//..................................................................................................
+
+message CuboidDescriptor {
+    Vec3 origin = 1;
+    Vec3 x_axis = 2;
+    Vec3 y_axis = 3;
+    Vec3 z_axis = 4;
+    float lenx = 5;
+    float leny = 6;
+    float lenz = 7;
+    Color line_color = 8;
+    Color tri_color = 9;
+    CellType cell_type = 10;
+}
+
+message AddCuboidRequest {
+    string client_name = 1;
+    CuboidDescriptor cuboid_descriptor = 2;
+}
+//..................................................................................................
+
+message CylinderDescriptor {
+    Vec3 origin = 1;
+    Vec3 axis = 2;
+    float radius = 3;
+    float height = 4;
+    uint32 num_sides = 5;
+    Color line_color = 6;
+    Color tri_color = 7;
+    bool open = 8;
+}
+
+message AddCylinderRequest {
+    string client_name = 1;
+    CylinderDescriptor cylinder_descriptor = 2;
+}
+//..................................................................................................
+
+message SphereDescriptor {
+    Vec3 origin = 1;
+    Vec3 axis = 2;
+    float radius = 3;
+    uint32 n_lat = 4;
+    uint32 n_long = 5;
+    Color line_color = 6;
+    Color tri_color = 7;
+}
+
+message AddSphereRequest {
+    string client_name = 1;
+    SphereDescriptor sphere_descriptor = 2;
+}
+//..................................................................................................
+
+message AxesDescriptor {
+    Vec3 origin = 1;
+    Vec3 x_axis = 2;
+    Vec3 y_axis = 3;
+    Vec3 z_axis = 4;
+    float neg_len = 5;
+    float pos_len = 6;
+}
+
+message AddAxesRequest {
+    string client_name = 1;
+    AxesDescriptor axes_descriptor = 2;
+}
+//..................................................................................................
+
+message MeshDescriptor {
+    repeated float vertices = 1;
+    repeated uint32 indices = 2;
+    CellType cell_type = 3;
+}
+
+message AddMeshRequest {
+    string client_name = 1;
+    MeshDescriptor mesh_descriptor = 2;
+}
+// .................................................................................................
+
+message ClearRequest {
+    string client_name = 1;
+}
+
+message ClearResponse {}
+// .................................................................................................
+
+message KillServerRequest {
+    string client_name = 1;
+}
+
+message KillServerResponse {}
+// .................................................................................................
+
+
+service StateService {
+    rpc AddLine(AddLineRequest) returns (AddItemResponse) {}
+    rpc AddTriangle(AddTriangleRequest) returns (AddItemResponse) {}
+    rpc AddPlane(AddPlaneRequest) returns (AddItemResponse) {}
+    rpc AddCuboid(AddCuboidRequest) returns (AddItemResponse) {}
+    rpc AddCylinder(AddCylinderRequest) returns (AddItemResponse) {}
+    rpc AddSphere(AddSphereRequest) returns (AddItemResponse) {}
+    rpc AddAxes(AddAxesRequest) returns (AddItemResponse) {}
+    rpc clear(ClearRequest) returns (ClearResponse) {}
+    rpc KillServer(KillServerRequest) returns (KillServerResponse) {}
+}
+
+
+
+
