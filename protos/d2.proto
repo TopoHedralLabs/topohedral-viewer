@@ -102,8 +102,6 @@ message KillServerRequest {
 message KillServerResponse {}
 // .................................................................................................
 
-
-
 service StateService {
     rpc AddAxes(AddAxesRequest) returns (AddItemResponse);
     rpc AddSquare(AddSquareRequest) returns (AddItemResponse);
