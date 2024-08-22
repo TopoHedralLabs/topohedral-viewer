@@ -3,7 +3,6 @@
 //! 
 //--------------------------------------------------------------------------------------------------
 
-use std::marker::PhantomData;
 
 //{{{ crate imports 
 use crate::common::{Vec2, Color, CellType, Validated};
@@ -11,6 +10,7 @@ use super::d2rpc;
 use super::super::mesh::{AxesDescriptor, SquareDescriptor, CircleDescriptor, Mesh};
 //}}}
 //{{{ std imports 
+use std::marker::PhantomData;
 //}}}
 //{{{ dep imports 
 //}}}
@@ -54,35 +54,6 @@ impl From<Color> for d2rpc::Color
             r: rgp[0],
             g: rgp[1],
             b: rgp[2],
-        }
-    }
-}
-//}}}
-
-//{{{ impl: From<d2rpc::CellType> for CellType
-impl  From<i32> for CellType
-{
-    fn from(c: i32) -> Self
-    {
-        match c
-        {
-            2 => CellType::Triangle,
-            1 =>  CellType::Line,
-            _ => CellType::None,
-        }
-    }
-}
-//}}}
-//{{{ impl: From<CellType> for d2rpc::CellType
-impl From<CellType> for i32
-{
-    fn from(c: CellType) -> Self
-    {
-        match c
-        {
-            CellType::Triangle => 2,
-            CellType::Line => 1,
-            CellType::None => 0,
         }
     }
 }
