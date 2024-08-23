@@ -266,6 +266,11 @@ fn create_render_pipelines(
 //}}}
 //{{{ collection: WgpuState
 //{{{ struct: WgpuState
+/// The `WgpuState` struct represents the state of the WGPU (WebGPU) rendering system. It contains
+/// the necessary WGPU infrastructure, such as the surface, device, queue, configuration, depth
+/// texture, and render pipelines. It also manages the camera buffer, bind group, and mesh buffers.
+/// This struct is used to manage the rendering state and provide access to the WGPU resources
+/// required for rendering.
 struct WgpuState<'a>
 {
     //................................. wgpu infrastructure
@@ -290,6 +295,13 @@ struct WgpuState<'a>
 //{{{ impl: WgpuState
 impl<'a> WgpuState<'a>
 {
+    //{{{ fun: new
+    /// Creates a new `WgpuState` instance with the given event loop, uniform buffer, vertex buffer 
+    /// layout, and depth value.
+    ///
+    /// This function sets up the necessary WGPU infrastructure, including the surface, device, 
+    /// queue, configuration, depth texture, and render pipelines. It also creates the camera 
+    /// buffer and bind group.
     pub async fn new(
         event_loop: &ActiveEventLoop,
         uniform_buffer: &[u8],
@@ -409,11 +421,12 @@ impl<'a> WgpuState<'a>
             window: window,
         }
     }
-
+    //}}}
+    //{{{ fun: update
     /// Takes an updated mesh state and updates the buffers used by the wgpu state.
     ///
     /// Meshes are static, therefore we only need to add or delete buffers as and
-    /// when eshes they are created or deleted. We will not need to edit existing
+    /// when meshes they are created or deleted. We will not need to edit existing
     /// buffers as their corresponding meshes cannot be edited.
     pub fn update<'b, V>(
         &mut self,
@@ -511,9 +524,11 @@ impl<'a> WgpuState<'a>
         self.queue
             .write_buffer(&self.camera_buffer, 0, uniform_buffer);
     }
-
+    //}}}
+    //{{{ fun: render
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError>
     {
+        //{{{ init: local variables
         let output = self.surface.get_current_texture()?;
 
         let view = output
@@ -525,8 +540,10 @@ impl<'a> WgpuState<'a>
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("Render Encoder"),
             });
-
+        //}}}
+        //{{{ com: perform render passes
         {
+            //{{{ com: initialize render pass
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Line Render Pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -553,8 +570,8 @@ impl<'a> WgpuState<'a>
                 occlusion_query_set: None,
                 timestamp_writes: None,
             });
-
-            // line render pass
+            //}}}
+            //{{{ com: line render pass
             {
                 render_pass.set_pipeline(&self.line_render_pipeline);
 
@@ -569,8 +586,8 @@ impl<'a> WgpuState<'a>
                     render_pass.draw_indexed(0..*num_indices, 0, 0..1)
                 }
             }
-
-            // face render pass
+            //}}}
+            //{{{ com: face render pass
             {
                 render_pass.set_pipeline(&self.tri_face_render_pipeline);
                 render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
@@ -584,7 +601,8 @@ impl<'a> WgpuState<'a>
                     render_pass.draw_indexed(0..*num_indices, 0, 0..1)
                 }
             }
-            // edge render pass
+            //}}}
+            //{{{ com: edge render pass
             if let Some(tri_edge_render_pipeline) = &self.tri_edge_render_pipeline
             {
                 render_pass.set_pipeline(tri_edge_render_pipeline);
@@ -600,15 +618,17 @@ impl<'a> WgpuState<'a>
                     render_pass.draw_indexed(0..*num_indices, 0, 0..1)
                 }
             }
+            //}}}
         }
-
+        //}}}
+        //{{{ com: submit the render pass
         self.queue.submit(Some(encoder.finish()));
-
         output.present();
-
         Ok(())
+        //}}}
     }
-
+    //}}}
+    //{{{ fun: resize
     pub fn resize(
         &mut self,
         width: u32,
@@ -621,11 +641,13 @@ impl<'a> WgpuState<'a>
         self.depth_texture =
             dt::DepthTexture::create_depth_texture(&self.device, &self.config, "Depth Texture");
     }
-
+    //}}}
+    //{{{ fun: update_camera
     pub fn window_request_redraw(&mut self)
     {
         self.window.request_redraw();
     }
+    //}}}
 }
 //..................................................................................................
 //}}}
