@@ -1,6 +1,9 @@
-//.................................. std
-//.................................. 3rd party
-//.................................. crate
+//! The 2D state module for the TopoViewer application.
+//!
+//! Contains the 2D-specific state and logic for the TopoViewer application.
+//--------------------------------------------------------------------------------------------------
+
+//{{{ crate imports 
 use super::{
     camera::View,
     mesh::{AxesDescriptor, CircleDescriptor, Mesh, Mesh2D, SquareDescriptor},
@@ -8,8 +11,15 @@ use super::{
 };
 use crate::core::{StateCore, ViewStateCore};
 use crate::events::EventController;
-//..................................................................................................
+//}}}
+//{{{ std imports 
+//}}}
+//{{{ dep imports 
+//}}}
+//--------------------------------------------------------------------------------------------------
 
+//{{{ collection: ViewState
+//{{{ struct: VeiwState
 #[derive(Default, Debug)]
 pub struct ViewState
 {
@@ -17,7 +27,8 @@ pub struct ViewState
     view_controller: EventController,
 }
 //..................................................................................................
-
+//}}}
+//{{{ impl: ViewState
 impl ViewState
 {
     pub fn new() -> Self
@@ -28,6 +39,8 @@ impl ViewState
         }
     }
 }
+//}}}
+//{{{ impl: ViewStateCore for ViewState
 impl ViewStateCore for ViewState
 {
     fn update(&mut self)
@@ -46,9 +59,12 @@ impl ViewStateCore for ViewState
     }
 }
 //..................................................................................................
-
+//}}}
+//}}}
+//{{{ type: State
 pub type State<'a> = StateCore<'a, Vertex, ViewState>;
-
+//}}}
+//{{{ trait: State2D
 pub trait State2D<'a>
 {
     fn add_axes(
@@ -66,7 +82,8 @@ pub trait State2D<'a>
         circle_desc: &CircleDescriptor,
     ) -> usize; 
 }
-
+//}}}
+//{{{ impl: State2D for State
 impl<'a> State2D<'a> for State<'a>
 {
     fn add_axes(
@@ -96,3 +113,13 @@ impl<'a> State2D<'a> for State<'a>
         self.add_mesh(circle_mesh)
     }
 }
+//}}}
+
+//-------------------------------------------------------------------------------------------------
+//{{{ mod: tests
+#[cfg(test)]
+mod tests
+{
+  
+}
+//}}}
