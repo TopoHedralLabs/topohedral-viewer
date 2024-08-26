@@ -89,7 +89,7 @@ impl From<LineDescriptor> for d3rpc::LineDescriptor {
 }
 //}}}
 
-//{{{
+//{{{ impl Validated for d3rpc::AddTriangleRequest
 impl Validated for d3rpc::AddTriangleRequest {
     fn is_valid(&self) -> bool {
         let is_val = match self.triangle_descriptor {
@@ -106,8 +106,9 @@ impl Validated for d3rpc::AddTriangleRequest {
     }
 }
 //}}}
-//{{{
-impl From<d3rpc::TriangleDescriptor> for TriangleDescriptor {
+//{{{ impl From<d3rpc::TriangleDescriptor> for TriangleDescriptor 
+impl From<d3rpc::TriangleDescriptor> for TriangleDescriptor 
+{
     fn from(td: d3rpc::TriangleDescriptor) -> Self {
         TriangleDescriptor {
             v1: td.v1.unwrap().into(),
@@ -120,7 +121,7 @@ impl From<d3rpc::TriangleDescriptor> for TriangleDescriptor {
     }
 }
 //}}}
-//{{{
+//{{{ impl From<TriangleDescriptor> for d3rpc::TriangleDescriptor
 impl From<TriangleDescriptor> for d3rpc::TriangleDescriptor {
     fn from(td: TriangleDescriptor) -> Self {
         d3rpc::TriangleDescriptor {
@@ -134,7 +135,8 @@ impl From<TriangleDescriptor> for d3rpc::TriangleDescriptor {
     }
 }
 //}}}
-//{{{
+
+//{{{ impl Validated for d3rpc::AddPlaneRequest
 impl Validated for d3rpc::AddPlaneRequest {
     fn is_valid(&self) -> bool {
         let is_val = match self.plane_descriptor {
@@ -153,7 +155,7 @@ impl Validated for d3rpc::AddPlaneRequest {
     }
 }
 //}}}
-//{{{
+//{{{ impl From<d3rpc::PlaneDescriptor> for PlaneDescriptor
 impl From<d3rpc::PlaneDescriptor> for PlaneDescriptor {
     fn from(pd: d3rpc::PlaneDescriptor) -> Self {
         PlaneDescriptor {
@@ -171,7 +173,7 @@ impl From<d3rpc::PlaneDescriptor> for PlaneDescriptor {
     }
 }
 //}}}
-//{{{
+//{{{ impl From<PlaneDescriptor> for d3rpc::PlaneDescriptor
 impl From<PlaneDescriptor> for d3rpc::PlaneDescriptor {
     fn from(pd: PlaneDescriptor) -> Self {
         d3rpc::PlaneDescriptor {
@@ -190,7 +192,7 @@ impl From<PlaneDescriptor> for d3rpc::PlaneDescriptor {
 }
 //}}}
 
-//{{{
+//{{{ impl Validated for d3rpc::AddCuboidRequest
 impl Validated for d3rpc::AddCuboidRequest
 {
     fn is_valid(&self) -> bool {
@@ -212,7 +214,7 @@ impl Validated for d3rpc::AddCuboidRequest
     }
 }
 //}}}
-//{{{
+//{{{ impl From<d3rpc::CuboidDescriptor> for CuboidDescriptor
 impl From<d3rpc::CuboidDescriptor> for CuboidDescriptor
 {
     fn from(cd: d3rpc::CuboidDescriptor) -> Self {
@@ -231,7 +233,7 @@ impl From<d3rpc::CuboidDescriptor> for CuboidDescriptor
     }
 }
 //}}}
-//{{{
+//{{{ impl From<CuboidDescriptor> for d3rpc::CuboidDescriptor
 impl From<CuboidDescriptor> for d3rpc::CuboidDescriptor
 {
     fn from(cd: CuboidDescriptor) -> Self {
@@ -251,7 +253,7 @@ impl From<CuboidDescriptor> for d3rpc::CuboidDescriptor
 }
 //}}}
 
-//{{{
+//{{{ impl Validated for d3rpc::AddCylinderRequest
 impl Validated for d3rpc::AddCylinderRequest
 {
     fn is_valid(&self) -> bool {
@@ -271,7 +273,7 @@ impl Validated for d3rpc::AddCylinderRequest
     }
 }
 //}}}
-//{{{
+//{{{ impl From<d3rpc::CylinderDescriptor> for CylinderDescriptor
 impl From<d3rpc::CylinderDescriptor> for CylinderDescriptor
 {
     fn from(cd: d3rpc::CylinderDescriptor) -> Self {
@@ -288,7 +290,7 @@ impl From<d3rpc::CylinderDescriptor> for CylinderDescriptor
     }
 }
 //}}}
-//{{{
+//{{{ impl From<CylinderDescriptor> for d3rpc::CylinderDescriptor
 impl From<CylinderDescriptor> for d3rpc::CylinderDescriptor
 {
     fn from(cd: CylinderDescriptor) -> Self {
@@ -306,7 +308,7 @@ impl From<CylinderDescriptor> for d3rpc::CylinderDescriptor
 }
 //}}}
 
-//{{{
+//{{{ impl Validated for d3rpc::AddSphereRequest
 impl Validated for d3rpc::AddSphereRequest
 {
     fn is_valid(&self) -> bool {
@@ -326,7 +328,7 @@ impl Validated for d3rpc::AddSphereRequest
     }
 }
 //}}}
-//{{{
+//{{{ impl From<d3rpc::SphereDescriptor> for SphereDescriptor
 impl From<d3rpc::SphereDescriptor> for SphereDescriptor
 {
     fn from(cd: d3rpc::SphereDescriptor) -> Self {
@@ -342,7 +344,7 @@ impl From<d3rpc::SphereDescriptor> for SphereDescriptor
     }
 }
 //}}}
-//{{{
+//{{{ impl From<SphereDescriptor> for d3rpc::SphereDescriptor
 impl From<SphereDescriptor> for d3rpc::SphereDescriptor
 {
     fn from(cd: SphereDescriptor) -> Self {
@@ -359,7 +361,7 @@ impl From<SphereDescriptor> for d3rpc::SphereDescriptor
 }
 //}}}
 
-//{{{
+//{{{ impl Validated for d3rpc::AddAxesRequest
 impl Validated for d3rpc::AddAxesRequest 
 {
     fn is_valid(&self) -> bool {
@@ -378,7 +380,7 @@ impl Validated for d3rpc::AddAxesRequest
     }
 }
 //}}}
-//{{{
+//{{{ impl From<d3rpc::AxesDescriptor> for AxesDescriptor
 impl From<d3rpc::AxesDescriptor> for AxesDescriptor
 {
     fn from(ad: d3rpc::AxesDescriptor) -> Self {
@@ -393,7 +395,7 @@ impl From<d3rpc::AxesDescriptor> for AxesDescriptor
     }
 }
 //}}}
-//{{{
+//{{{ impl From<AxesDescriptor> for d3rpc::AxesDescriptor
 impl From<AxesDescriptor> for d3rpc::AxesDescriptor
 {
     fn from(ad: AxesDescriptor) -> Self {
@@ -409,7 +411,7 @@ impl From<AxesDescriptor> for d3rpc::AxesDescriptor
 }
 //}}}
 
-//{{{
+//{{{ impl Validated for d3rpc::AddMeshRequest
 impl Validated for d3rpc::AddMeshRequest
 {
     fn is_valid(&self) -> bool {
@@ -424,7 +426,7 @@ impl Validated for d3rpc::AddMeshRequest
     }
 }
 //}}}
-//{{{
+//{{{ impl From<d3rpc::MeshDescriptor> for Mesh<'a>
 impl<'a> From<d3rpc::MeshDescriptor> for Mesh<'a>
 {
     fn from(md: d3rpc::MeshDescriptor) -> Self {
@@ -438,7 +440,7 @@ impl<'a> From<d3rpc::MeshDescriptor> for Mesh<'a>
     }
 }
 //}}}
-//{{{
+//{{{ impl From<Mesh<'a>> for d3rpc::MeshDescriptor
 impl<'a> From<Mesh<'a>> for d3rpc::MeshDescriptor
 {
     fn from(md: Mesh<'a>) -> Self {
