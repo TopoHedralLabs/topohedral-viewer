@@ -534,6 +534,31 @@ pub mod state_service_client {
                 .insert(GrpcMethod::new("d3rpc.StateService", "AddAxes"));
             self.inner.unary(req, path, codec).await
         }
+        pub async fn add_mesh(
+            &mut self,
+            request: impl tonic::IntoRequest<super::AddMeshRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::AddItemResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/d3rpc.StateService/AddMesh",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("d3rpc.StateService", "AddMesh"));
+            self.inner.unary(req, path, codec).await
+        }
         pub async fn clear(
             &mut self,
             request: impl tonic::IntoRequest<super::ClearRequest>,
@@ -614,6 +639,10 @@ pub mod state_service_server {
         async fn add_axes(
             &self,
             request: tonic::Request<super::AddAxesRequest>,
+        ) -> std::result::Result<tonic::Response<super::AddItemResponse>, tonic::Status>;
+        async fn add_mesh(
+            &self,
+            request: tonic::Request<super::AddMeshRequest>,
         ) -> std::result::Result<tonic::Response<super::AddItemResponse>, tonic::Status>;
         async fn clear(
             &self,
@@ -1013,6 +1042,52 @@ pub mod state_service_server {
                     let fut = async move {
                         let inner = inner.0;
                         let method = AddAxesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/d3rpc.StateService/AddMesh" => {
+                    #[allow(non_camel_case_types)]
+                    struct AddMeshSvc<T: StateService>(pub Arc<T>);
+                    impl<
+                        T: StateService,
+                    > tonic::server::UnaryService<super::AddMeshRequest>
+                    for AddMeshSvc<T> {
+                        type Response = super::AddItemResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::AddMeshRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StateService>::add_mesh(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = AddMeshSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
