@@ -184,7 +184,7 @@ impl<'a> TopoViewer<'a> {
                 info!("Building multi-threaded tokio runtime");
                 //}}}
                 runtime::Builder::new_multi_thread()
-                    .worker_threads(2)
+                    .worker_threads(3)
                     .enable_all()
                     .build()
                     .unwrap()
@@ -286,6 +286,7 @@ impl ApplicationHandler<TopoHedralEvent> for TopoViewer<'static> {
         //{{{ trace
         info!("Resumed application");
         //}}}
+        
         match self.mode {
             //{{{ case: 2D
             Mode::D2 => {
