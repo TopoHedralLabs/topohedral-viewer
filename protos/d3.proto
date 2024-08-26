@@ -179,6 +179,7 @@ service StateService {
     rpc AddCylinder(AddCylinderRequest) returns (AddItemResponse) {}
     rpc AddSphere(AddSphereRequest) returns (AddItemResponse) {}
     rpc AddAxes(AddAxesRequest) returns (AddItemResponse) {}
+    rpc AddMesh(AddMeshRequest) returns (AddItemResponse) {}
     rpc clear(ClearRequest) returns (ClearResponse) {}
     rpc KillServer(KillServerRequest) returns (KillServerResponse) {}
 }
