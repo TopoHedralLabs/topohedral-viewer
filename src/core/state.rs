@@ -927,7 +927,7 @@ where
     }
     //..............................................................
     //}}}
-    //{{{ fun: has_windo
+    //{{{ fun: has_window
     pub fn has_window(
         &mut self,
         window_id: &winit::window::WindowId,
@@ -974,6 +974,12 @@ where
         self.mesh_state.meshes.get_mut(&uid)
     }
     //..............................................................
+    //}}}
+    //{{{ fun: clear_meshes
+    pub fn clear_meshes(&mut self)
+    {
+        self.mesh_state.meshes.clear();
+    }
     //}}}
 }
 //}}}
