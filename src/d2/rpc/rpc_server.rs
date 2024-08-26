@@ -22,20 +22,25 @@ use std::result::Result;
 use std::sync::{Arc, Mutex};
 //}}}
 //{{{ dep imports 
-use log::{error, info};
+use topohedral_tracing::{error, info, topo_log};
 use tokio::sync::mpsc;
 use tonic::{transport::Server, Request, Response, Status};
 //}}}
 //--------------------------------------------------------------------------------------------------
 
 //{{{ struct: StateServer
+/// The `StateServer` struct is responsible for managing the state of the 2D rendering system.
+/// It holds a reference to the shared state object (`State<'static>`), which is protected by a mutex,
+/// and a channel for sending shutdown signals.
+/// This struct is likely used as part of the RPC server implementation to handle incoming requests
+/// and update the rendering state accordingly.
 pub struct StateServer
 {
     state: Arc<Mutex<State<'static>>>,
     shutdown_sender: mpsc::Sender<()>,
 }
 //}}}
-//{{{ trait StateService for StateServer
+//{{{ impl d2rpc::state_service_server::StateService for StateServer
 #[tonic::async_trait]
 impl d2rpc::state_service_server::StateService for StateServer
 {
@@ -231,7 +236,7 @@ pub async fn run_server(
         .serve_with_shutdown(rpc_address, async {
             // wait for shutdown signal
             shutdown_receiver.recv().await.unwrap();
-            info!("Received shutdown signal, now re-sending");
+            info!("Received shutdown signal, shutting down RPC server");
         });
 
     if let Err(e) = server.await
@@ -239,4 +244,10 @@ pub async fn run_server(
         error!("Server error: {}", e);
     }
 }
+//}}}
+
+//-------------------------------------------------------------------------------------------------
+//{{{ mod: tests
+#[cfg(test)]
+mod tests {}
 //}}}
