@@ -1,15 +1,24 @@
-//.................................. std
-//.................................. 3rd party
-//.................................. crate
+//! Short Description of module
+//!
+//! Longer description of module
+//--------------------------------------------------------------------------------------------------
+
+//{{{ crate imports 
 use super::{
     camera::View,
-    mesh::{LineDescriptor, PlaneDescriptor, CuboidDescriptor, CylinderDescriptor, SphereDescriptor, 
+    mesh::{LineDescriptor, TriangleDescriptor, PlaneDescriptor, CuboidDescriptor, CylinderDescriptor, SphereDescriptor, 
     AxesDescriptor, Mesh, Mesh3D},
     vertex::Vertex
 };
 use crate::core::{StateCore, ViewStateCore};
 use crate::events::EventController; 
-//..................................................................................................
+//}}}
+//{{{ std imports 
+//}}}
+//{{{ dep imports 
+//}}}
+//--------------------------------------------------------------------------------------------------
+
 
 #[derive(Default, Debug)]
 pub struct ViewState
@@ -56,6 +65,10 @@ pub trait State3D<'a>
         &mut self,
         line: &LineDescriptor,
     ) -> usize;
+    fn add_triangle(
+        &mut self,
+        triangle: &TriangleDescriptor,
+    ) -> usize;
     fn add_plane(
         &mut self,
         plane: &PlaneDescriptor,
@@ -88,6 +101,14 @@ impl<'a> State3D<'a> for State<'a>
     {
         let line_mesh = Mesh::create_line(line_desc);
         self.add_mesh(line_mesh)
+    }
+
+    fn add_triangle(
+            &mut self,
+            triangle: &TriangleDescriptor,
+        ) -> usize {
+        let triangle_mesh = Mesh::create_triangle(triangle);
+        self.add_mesh(triangle_mesh)
     }
 
     fn add_plane(
