@@ -20,7 +20,7 @@ use winit::event::WindowEvent;
 use winit::{
     self,
     application::ApplicationHandler,
-    event_loop::{ControlFlow, EventLoop},
+    event_loop::{ControlFlow, EventLoop, EventLoopProxy},
 };
 
 use clap::{Parser, Subcommand, ValueEnum};
@@ -115,6 +115,7 @@ enum RcpStatus {
 //{{{ struct: TopoViewer
 /// The TopoViewer class is the main entry point for the TopoViewer application.
 pub struct TopoViewer<'a> {
+    event_loop_proxy: EventLoopProxy<TopoHedralEvent>,
     mode: Mode,
     rpc_port: Option<u16>,
     state_2d: Option<State2Handle<'a>>,
@@ -141,7 +142,7 @@ impl<'a> TopoViewer<'a> {
     ///
     /// # Returns
     /// The TopoViewer instance.
-    pub fn new(topoviewer_options: &TopoViewerOptions) -> Self {
+    pub fn new(event_loop_proxy: EventLoopProxy<TopoHedralEvent>, topoviewer_options: &TopoViewerOptions) -> Self {
         //{{{ trace: enter
         info!(
             "Initialising TopoViewer with options {}",
@@ -192,6 +193,7 @@ impl<'a> TopoViewer<'a> {
         };
 
         TopoViewer {
+            event_loop_proxy: event_loop_proxy,
             mode: topoviewer_options.mode,
             rpc_port: match topoviewer_options.with_rpc {
                 RPCOption::None => None,
@@ -286,7 +288,87 @@ impl ApplicationHandler<TopoHedralEvent> for TopoViewer<'static> {
         //{{{ trace
         info!("Resumed application");
         //}}}
-        
+        if let Some(port) = self.rpc_port {
+
+
+            let socket = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), port);
+
+
+            let (shutdown_sender1, shutdown_receiver) = mpsc::channel::<()>(4);
+            let shutdown_sender2 = shutdown_sender1.clone();
+            let shutdown_sender3 = shutdown_sender1.clone();
+
+            self.shutdown_sender = Some(shutdown_sender2);
+            let ev_prox = self.event_loop_proxy.clone();
+            self.tokio_runtime.spawn(async move  {
+                tokio::signal::ctrl_c().await.unwrap();
+                //{{{ trace
+                info!("Received a Ctrl-C signal");
+                info!("Sending shutdown signal");
+                //}}}
+                shutdown_sender3.send(()).await.unwrap();
+                //{{{ trace
+                info!("Generationg shutdown event");
+                //}}}
+                ev_prox.send_event(TopoHedralEvent::RcpShutdown).unwrap();
+            });
+            //{{{ trace
+            info!("Launching RPC server with socket: {}", socket);
+            //}}}
+
+            match self.mode
+            {
+                //{{{ case: 2D
+                Mode::D2 => {
+
+                    let state_clone = self.state_2d.clone().unwrap();
+                    let state_clone_2 = state_clone.clone();
+
+                    let handle = self.tokio_runtime.spawn(async move {
+                        //{{{ trace
+                        info!("Launching 2D RPC server");
+                        //}}}
+                        d2::run_server(state_clone, socket, shutdown_sender1, shutdown_receiver)
+                            .await
+                    });
+
+                    self.rpc_handle_2d = Some(handle);
+
+                    info!("Launching 2D window");
+                    self.tokio_runtime
+                        .block_on(state_clone_2.lock().unwrap().launch_window(event_loop));
+                },
+                //}}}
+                //{{{ case: 3D
+                Mode::D3 => {
+
+                    let state_clone = self.state_3d.clone().unwrap();
+                    let state_clone_2 = state_clone.clone();
+
+                    let handle = self.tokio_runtime.spawn(async move {
+                        //{{{ trace
+                        info!("Launching 3D RPC server");
+                        //}}}
+                        d3::run_server(state_clone, socket, shutdown_sender1, shutdown_receiver)
+                            .await
+                    });
+
+                    self.rpc_handle_3d = Some(handle);
+                    info!("Launching 3D window");
+                    self.tokio_runtime
+                        .block_on(state_clone_2.lock().unwrap().launch_window(event_loop));
+
+                },
+                //}}}
+                //{{{ default
+                _ => {
+                    error!("Invalid mode");
+                },
+                //}}}
+            };
+            
+        }
+        /*//{{{
         match self.mode {
             //{{{ case: 2D
             Mode::D2 => {
@@ -331,6 +413,7 @@ impl ApplicationHandler<TopoHedralEvent> for TopoViewer<'static> {
             //{{{ case: 3D
             Mode::D3 => {} //}}}
         }
+        //}}}*/
     }
     //}}}
     //{{{ fun: window_event
@@ -412,7 +495,8 @@ impl ApplicationHandler<TopoHedralEvent> for TopoViewer<'static> {
 //..................................................................................................
 //}}}
 //{{{ enum:  TopoHedralEvent
-enum TopoHedralEvent {
+#[derive(Debug)]
+pub enum TopoHedralEvent {
     RcpShutdown,
 }
 //}}}
@@ -454,8 +538,10 @@ pub fn run_topoviewer(topoviewer_options: &TopoViewerOptions) {
     let event_loop = EventLoop::<TopoHedralEvent>::with_user_event()
         .build()
         .expect("Failed to create winit event loop");
+
+    let event_loop_proxy = event_loop.create_proxy();
     event_loop.set_control_flow(ControlFlow::Wait);
-    let mut app = TopoViewer::new(topoviewer_options);
+    let mut app = TopoViewer::new(event_loop_proxy, topoviewer_options);
     event_loop.run_app(&mut app).unwrap();
 }
 //}}}
