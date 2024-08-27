@@ -368,52 +368,6 @@ impl ApplicationHandler<TopoHedralEvent> for TopoViewer<'static> {
             };
             
         }
-        /*//{{{
-        match self.mode {
-            //{{{ case: 2D
-            Mode::D2 => {
-                if let Some(state) = self.state_2d.clone() {
-                    if let Some(port) = self.rpc_port {
-                        let socket = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), port);
-
-                        let state_clone = state.clone();
-
-                        let (shutdown_sender, shutdown_receiver) = mpsc::channel::<()>(4);
-                        self.shutdown_sender = Some(shutdown_sender.clone());
-
-                        let shutdown_sender_clone = shutdown_sender.clone();
-
-                        self.tokio_runtime.spawn(async move {
-                            tokio::signal::ctrl_c().await.unwrap();
-                            //{{{ trace
-                            info!("Received a Ctrl-C signal");
-                            info!("Sending shutdown signal");
-                            //}}}
-                            shutdown_sender_clone.send(()).await.unwrap();
-                        });
-                        //{{{ trace
-                        info!("Launching RPC server with socket: {}", socket);
-                        //}}}
-
-                        let handle = self.tokio_runtime.spawn(async move {
-                            //{{{ trace
-                            info!("Launching RPC server");
-                            //}}}
-                            d2::run_server(state_clone, socket, shutdown_sender, shutdown_receiver)
-                                .await
-                        });
-                        self.rpc_handle_2d = Some(handle);
-                    }
-                    info!("Launching 2D window");
-                    self.tokio_runtime
-                        .block_on(state.lock().unwrap().launch_window(event_loop));
-                }
-            }
-            //}}}
-            //{{{ case: 3D
-            Mode::D3 => {} //}}}
-        }
-        //}}}*/
     }
     //}}}
     //{{{ fun: window_event
