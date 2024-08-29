@@ -208,6 +208,8 @@ impl d2rpc::state_service_server::StateService for StateServer
             ))
         })?;
 
+        // self.state.lock().unwrap()
+
         Ok(Response::new(d2rpc::KillServerResponse {}))
     }
     //}}}
