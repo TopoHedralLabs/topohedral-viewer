@@ -408,59 +408,32 @@ impl<'a> Mesh3D<'a> for Mesh<'a>
     //{{{ fn: create_axes
     fn create_axes(axes_disc: &AxesDescriptor) -> Self
     {
-        let r = 0.01;
-        let np = 20;
-
-        let mut out = Self::from_num_triangles(np * 2);
+        let mut out = Self::from_num_lines(3);
         let glob_origin = axes_disc.origin;
+        //{{{ com: x axis
         {
             let axis = axes_disc.x_axis;
-            let x_origin = glob_origin - axes_disc.neg_len * axis;
-            let height = axes_disc.pos_len + axes_disc.neg_len;
-            let x_cyl = Self::create_cylinder(&CylinderDescriptor {
-                origin: x_origin,
-                axis: axis,
-                radius: r,
-                height: height,
-                num_sides: np,
-                line_color: Color::Red,
-                tri_color: Color::Red,
-                open: false,
-            });
-            out.merge(x_cyl);
+            let p1 = glob_origin - axes_disc.neg_len * axis;
+            let p2 = glob_origin + axes_disc.pos_len * axis;
+            out.add_line(&p1, &p2, &Color::Green, &Color::Green);
         }
+        //}}}
+        //{{{ com: y axis
         {
             let axis = axes_disc.y_axis;
-            let y_origin = glob_origin - axes_disc.neg_len * axis;
-            let height = axes_disc.pos_len + axes_disc.neg_len;
-            let x_cyl = Self::create_cylinder(&CylinderDescriptor {
-                origin: y_origin,
-                axis: axis,
-                radius: r,
-                height: height,
-                num_sides: np,
-                line_color: Color::Blue,
-                tri_color: Color::Blue,
-                open: false,
-            });
-            out.merge(x_cyl);
+            let p1 = glob_origin - axes_disc.neg_len * axis;
+            let p2 = glob_origin + axes_disc.pos_len * axis;
+            out.add_line(&p1, &p2, &Color::Red, &Color::Red);
         }
+        //}}}
+        //{{{ com: z axis
         {
             let axis = axes_disc.z_axis;
-            let z_origin = glob_origin - axes_disc.neg_len * axis;
-            let height = axes_disc.pos_len + axes_disc.neg_len;
-            let x_cyl = Self::create_cylinder(&CylinderDescriptor {
-                origin: z_origin,
-                axis: axis,
-                radius: r,
-                height: height,
-                num_sides: np,
-                line_color: Color::Green,
-                tri_color: Color::Green,
-                open: false,
-            });
-            out.merge(x_cyl);
+            let p1 = glob_origin - axes_disc.neg_len * axis;
+            let p2 = glob_origin + axes_disc.pos_len * axis;
+            out.add_line(&p1, &p2, &Color::Blue, &Color::Blue);
         }
+        //}}}
 
         out
     }
