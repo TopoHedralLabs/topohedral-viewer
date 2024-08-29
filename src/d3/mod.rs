@@ -12,14 +12,15 @@
 //--------------------------------------------------------------------------------------------------
 
 mod camera;
+mod vertex;
 mod mesh;
 mod state;
-mod vertex;
 mod rpc;
 
-pub use vertex::{Vertex, VertexDescriptor};
+pub(crate) use state::State;
+pub(crate) use rpc::run_server;
+
 pub use mesh::{
     AxesDescriptor, CuboidDescriptor, CylinderDescriptor, LineDescriptor, Mesh, PlaneDescriptor,
     SphereDescriptor, Mesh3D
 };
-pub use state::{State, State3D};
