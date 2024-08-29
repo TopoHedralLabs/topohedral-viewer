@@ -276,7 +276,23 @@ impl d3rpc::state_service_server::StateService for StateServer {
         &self,
         request: tonic::Request<d3rpc::KillServerRequest>,
     ) -> std::result::Result<tonic::Response<d3rpc::KillServerResponse>, tonic::Status> {
-        todo!();
+
+        let addr = request.remote_addr();
+        let msg = request.into_inner();
+
+        info!(
+            "Received kill_server request from {} on port {:?}",
+            msg.client_name, addr
+        );
+
+        self.shutdown_sender.send(()).await.map_err(|e| {
+            Status::internal(format!(
+                "Failed to send shutdown signal due to error: {}",
+                e
+            ))
+        })?;
+
+        Ok(Response::new(d3rpc::KillServerResponse {}))
     }
     //}}}
 }
