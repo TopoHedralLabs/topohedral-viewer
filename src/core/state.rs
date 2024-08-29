@@ -3,21 +3,21 @@
 //! This includes handling of events, rendering, and other shared functionality.
 //--------------------------------------------------------------------------------------------------
 
-//{{{ crate imports 
+//{{{ crate imports
 use crate::core::{MeshCore, VertexCore};
 use crate::depth_texture as dt;
 use crate::events::EventController;
 //}}}
-//{{{ std imports 
+//{{{ std imports
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 //}}}
-//{{{ dep imports 
+//{{{ dep imports
 use serde::{Deserialize, Serialize};
+use topohedral_tracing::*;
 use wgpu::{self, util::DeviceExt, Device, Features};
 use winit::window::Window;
 use winit::{self, event::WindowEvent, event_loop::ActiveEventLoop};
-use topohedral_tracing::*;
 //}}}
 //--------------------------------------------------------------------------------------------------
 
@@ -39,8 +39,7 @@ const SHADER_3D: &str = include_str!("../d3/shader3d.wgsl");
 /// # Panics
 ///
 /// This function will panic if an invalid dimension value is provided.
-fn shader_module_desc(d: usize) -> wgpu::ShaderModuleDescriptor<'static>
-{
+fn shader_module_desc(d: usize) -> wgpu::ShaderModuleDescriptor<'static> {
     if d == 2
     //{{{ case: 2D
     {
@@ -83,10 +82,17 @@ fn create_render_pipelines(
     wgpu::RenderPipeline,
     Option<wgpu::RenderPipeline>,
     wgpu::RenderPipeline,
-)
-{
+) {
+    //{{{ com: compute shader
+    //{{{ trace
+    info!("Computing the shader");
+    //}}}
     let shader = device.create_shader_module(shader_module_desc(d));
-
+    //}}}
+    //{{{ com: compute camera bind group layout
+    //{{{ trace
+    info!("Computing the camera bind group layout");
+    //}}}
     let camera_bind_group_layout =
         device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             entries: &[wgpu::BindGroupLayoutEntry {
@@ -101,13 +107,21 @@ fn create_render_pipelines(
             }],
             label: Some("camera_bind_group_layout"),
         });
-
+    //}}}
+    //{{{ com: compute render pipeline layout
+    //{{{ trace
+    info!("Computing the render pipeline layout");
+    //}}}
     let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("Render Pipeline Layout 1"),
         bind_group_layouts: &[&camera_bind_group_layout],
         push_constant_ranges: &[],
     });
-
+    //}}}
+    //{{{ com: compute line render pipeline
+    //{{{ trace
+    info!("Computing the line render pipeline");
+    //}}}
     let line_render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         label: Some("Line Render Pipeline"),
         layout: Some(&render_pipeline_layout),
@@ -148,11 +162,16 @@ fn create_render_pipelines(
         },
         multiview: None,
     });
-
+    //}}}
+    //{{{ com: triangle edge render pipeline if supported
     let tri_edge_render_pipeline = if device
         .features()
         .contains(wgpu::Features::POLYGON_MODE_LINE)
+    //{{{ case: supported
     {
+        //{{{ trace
+        info!("Computing the triangle edge render pipeline");
+        //}}}
         Some(
             device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
                 label: Some("Triangle Edge Render Pipeline"),
@@ -205,11 +224,21 @@ fn create_render_pipelines(
             }),
         )
     }
+    //}}}
     else
+    //{{{ case: not supported
     {
+        //{{{ trace
+        info!("Triangle edge render pipeline not supported");
+        //}}}
         None
     };
-
+    //}}}
+    //}}}
+    //{{{ com: compute triangle face render pipeline
+    //{{{ trace
+    info!("Computing the triangle face render pipeline");
+    //}}}
     let tri_face_render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         label: Some("Triangle Face Render Pipeline"),
         layout: Some(&render_pipeline_layout),
@@ -255,12 +284,17 @@ fn create_render_pipelines(
         },
         multiview: None,
     });
-
+    //}}}
+    //{{{ com: yield the result
+    //{{{ trace
+    info!("Yielding the result");
+    //}}}
     (
         line_render_pipeline,
         tri_edge_render_pipeline,
         tri_face_render_pipeline,
     )
+    //}}}
 }
 //..................................................................................................
 //}}}
@@ -271,8 +305,7 @@ fn create_render_pipelines(
 /// texture, and render pipelines. It also manages the camera buffer, bind group, and mesh buffers.
 /// This struct is used to manage the rendering state and provide access to the WGPU resources
 /// required for rendering.
-struct WgpuState<'a>
-{
+struct WgpuState<'a> {
     //................................. wgpu infrastructure
     surface: wgpu::Surface<'a>,
     device: wgpu::Device,
@@ -293,37 +326,46 @@ struct WgpuState<'a>
 }
 //}}}
 //{{{ impl: WgpuState
-impl<'a> WgpuState<'a>
-{
+impl<'a> WgpuState<'a> {
     //{{{ fun: new
-    /// Creates a new `WgpuState` instance with the given event loop, uniform buffer, vertex buffer 
+    /// Creates a new `WgpuState` instance with the given event loop, uniform buffer, vertex buffer
     /// layout, and depth value.
     ///
-    /// This function sets up the necessary WGPU infrastructure, including the surface, device, 
-    /// queue, configuration, depth texture, and render pipelines. It also creates the camera 
+    /// This function sets up the necessary WGPU infrastructure, including the surface, device,
+    /// queue, configuration, depth texture, and render pipelines. It also creates the camera
     /// buffer and bind group.
     pub async fn new(
         event_loop: &ActiveEventLoop,
         uniform_buffer: &[u8],
         vert_buf_layout: &[wgpu::VertexBufferLayout<'static>],
         d: usize,
-    ) -> Self
-    {
+    ) -> Self {
+
+        //{{{ com: create window, find its size
+        //{{{ trace
+        info!("Creating window");
+        //}}}
         let window = Arc::new(
             event_loop
                 .create_window(Window::default_attributes())
                 .unwrap(),
         );
-
         let size = window.inner_size();
-
+        //}}}
+        //{{{ com: create instance
+        //{{{ trace
+        info!("Creating instance");
+        //}}}
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
             backends: wgpu::Backends::all(),
             ..Default::default()
         });
-
+        //}}}
+        //{{{ com: create surface and adapter
+        //{{{ trace
+        info!("Creating surface and adapter");
+        //}}}
         let surface = instance.create_surface(window.clone()).unwrap();
-
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptionsBase {
                 power_preference: wgpu::PowerPreference::default(),
@@ -332,9 +374,11 @@ impl<'a> WgpuState<'a>
             })
             .await
             .unwrap();
-
-        let features = Features::POLYGON_MODE_LINE;
-
+        //}}}
+        //{{{ com: compute the device and queue
+        //{{{ trace
+        info!("Compute the device and queue");
+        //}}}
         let (device, queue) = adapter
             .request_device(
                 &wgpu::DeviceDescriptor {
@@ -346,16 +390,23 @@ impl<'a> WgpuState<'a>
             )
             .await
             .unwrap();
-
+        //}}}
+        //{{{ com: get surface capabilities and surface format
+        //{{{ trace
+        info!("Get surface capabilities and surface format");
+        //}}}
         let surface_capbilities = surface.get_capabilities(&adapter);
-
         let surface_format = surface_capbilities
             .formats
             .iter()
             .copied()
             .find(|f| f.is_srgb())
             .unwrap_or(surface_capbilities.formats[0]);
-
+            //}}}
+        //{{{ com: create surface configuration, configure the surface
+        //{{{ trace
+        info!("Create surface configuration, configure the surface");
+        //}}}
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: surface_format,
@@ -366,21 +417,31 @@ impl<'a> WgpuState<'a>
             view_formats: vec![],
             desired_maximum_frame_latency: 2,
         };
-
         surface.configure(&device, &config);
-
+        //}}}
+        //{{{ com: create depth texture and the render pipelines
+        //{{{ trace
+        info!("Crate depth texture and the render pipelines");
+        //}}}
         let depth_texture =
             dt::DepthTexture::create_depth_texture(&device, &config, "Depth Texture");
-
         let (lrp, terp, tfrp) =
             create_render_pipelines(&device, &config, &depth_texture, vert_buf_layout, d);
-
+        //}}}
+        //{{{ com: create camera buffer
+        //{{{ trace
+        info!("Create camera buffer");
+        //}}}
         let camera_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Camera Buffer"),
             contents: uniform_buffer,
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
-
+        //}}}
+        //{{{ com: create camera bind group
+        //{{{ trace
+        info!("Create camera bind group");
+        //}}}
         let camera_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 entries: &[wgpu::BindGroupLayoutEntry {
@@ -404,7 +465,11 @@ impl<'a> WgpuState<'a>
             }],
             label: Some("Camera Bind Group"),
         });
-
+        //}}}
+        //{{{ com: yield the state
+        //{{{ trace
+        info!("Yield the state object");
+        //}}}
         Self {
             surface: surface,
             device: device,
@@ -420,6 +485,7 @@ impl<'a> WgpuState<'a>
             wgpu_tri_buffers: HashMap::new(),
             window: window,
         }
+        //}}}
     }
     //}}}
     //{{{ fun: update
@@ -428,14 +494,11 @@ impl<'a> WgpuState<'a>
     /// Meshes are static, therefore we only need to add or delete buffers as and
     /// when meshes they are created or deleted. We will not need to edit existing
     /// buffers as their corresponding meshes cannot be edited.
-    pub fn update<'b, V>(
-        &mut self,
-        mesh_state: &mut MeshState<'b, V>,
-        uniform_buffer: &[u8],
-    ) where
+    pub fn update<'b, V>(&mut self, mesh_state: &mut MeshState<'b, V>, uniform_buffer: &[u8])
+    where
         V: VertexCore + Deserialize<'b> + Serialize,
     {
-        // delete line buffers corresponding to deleted meshes
+        //{{{ com: delete line buffers corresponding to deleted meshes
         {
             // first, find the beffers which no longer exist
             let deleted_mesh_set: Vec<usize> = self
@@ -446,12 +509,12 @@ impl<'a> WgpuState<'a>
                 .collect();
 
             // delete the buffers
-            for mesh_uid in deleted_mesh_set
-            {
+            for mesh_uid in deleted_mesh_set {
                 self.wgpu_line_buffers.remove(&mesh_uid);
             }
         }
-        // delete triangle buffers corresponding to deleted meshes
+        //}}}
+        //{{{ com: delete triangle buffers corresponding to deleted meshes
         {
             // first, find the beffers which no longer exist
             let deleted_mesh_set: Vec<usize> = self
@@ -462,17 +525,14 @@ impl<'a> WgpuState<'a>
                 .collect();
 
             // delete the buffers
-            for mesh_uid in deleted_mesh_set
-            {
+            for mesh_uid in deleted_mesh_set {
                 self.wgpu_tri_buffers.remove(&mesh_uid);
             }
         }
-
-        // now, find the buffers which have been added
-        for (mesh_uid, mesh) in mesh_state.meshes.iter()
-        {
-            if mesh.is_line() && !self.wgpu_line_buffers.contains_key(mesh_uid)
-            {
+        //}}}
+        //{{{ com: create buffers for new meshes, overwrite buffers for existing meshes
+        for (mesh_uid, mesh) in mesh_state.meshes.iter() {
+            if mesh.is_line() && !self.wgpu_line_buffers.contains_key(mesh_uid) {
                 let vertex_buffer =
                     self.device
                         .create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -495,8 +555,7 @@ impl<'a> WgpuState<'a>
                 );
             }
 
-            if mesh.is_triangle() && !self.wgpu_tri_buffers.contains_key(mesh_uid)
-            {
+            if mesh.is_triangle() && !self.wgpu_tri_buffers.contains_key(mesh_uid) {
                 let vertex_buffer =
                     self.device
                         .create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -519,15 +578,14 @@ impl<'a> WgpuState<'a>
                 );
             }
         }
-
-        // next update the uniforms
-        self.queue
-            .write_buffer(&self.camera_buffer, 0, uniform_buffer);
+        //}}}
+        //{{{ com: next update the uniforms
+        self.queue .write_buffer(&self.camera_buffer, 0, uniform_buffer);
+        //}}}
     }
     //}}}
     //{{{ fun: render
-    pub fn render(&mut self) -> Result<(), wgpu::SurfaceError>
-    {
+    pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         //{{{ init: local variables
         let output = self.surface.get_current_texture()?;
 
@@ -577,8 +635,7 @@ impl<'a> WgpuState<'a>
 
                 render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
 
-                for (uid, (num_indices, vertex_buffer, index_buffer)) in &self.wgpu_line_buffers
-                {
+                for (uid, (num_indices, vertex_buffer, index_buffer)) in &self.wgpu_line_buffers {
                     render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
 
                     render_pass.set_index_buffer(index_buffer.slice(..), wgpu::IndexFormat::Uint32);
@@ -592,8 +649,7 @@ impl<'a> WgpuState<'a>
                 render_pass.set_pipeline(&self.tri_face_render_pipeline);
                 render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
 
-                for (uid, (num_indices, vertex_buffer, index_buffer)) in &self.wgpu_tri_buffers
-                {
+                for (uid, (num_indices, vertex_buffer, index_buffer)) in &self.wgpu_tri_buffers {
                     render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
 
                     render_pass.set_index_buffer(index_buffer.slice(..), wgpu::IndexFormat::Uint32);
@@ -603,14 +659,12 @@ impl<'a> WgpuState<'a>
             }
             //}}}
             //{{{ com: edge render pass
-            if let Some(tri_edge_render_pipeline) = &self.tri_edge_render_pipeline
-            {
+            if let Some(tri_edge_render_pipeline) = &self.tri_edge_render_pipeline {
                 render_pass.set_pipeline(tri_edge_render_pipeline);
 
                 render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
 
-                for (uid, (num_indices, vertex_buffer, index_buffer)) in &self.wgpu_tri_buffers
-                {
+                for (uid, (num_indices, vertex_buffer, index_buffer)) in &self.wgpu_tri_buffers {
                     render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
 
                     render_pass.set_index_buffer(index_buffer.slice(..), wgpu::IndexFormat::Uint32);
@@ -629,12 +683,7 @@ impl<'a> WgpuState<'a>
     }
     //}}}
     //{{{ fun: resize
-    pub fn resize(
-        &mut self,
-        width: u32,
-        height: u32,
-    )
-    {
+    pub fn resize(&mut self, width: u32, height: u32) {
         self.config.width = width;
         self.config.height = height;
         self.surface.configure(&self.device, &self.config);
@@ -643,8 +692,7 @@ impl<'a> WgpuState<'a>
     }
     //}}}
     //{{{ fun: update_camera
-    pub fn window_request_redraw(&mut self)
-    {
+    pub fn window_request_redraw(&mut self) {
         self.window.request_redraw();
     }
     //}}}
@@ -658,8 +706,7 @@ impl<'a> WgpuState<'a>
 ///
 /// This struct contains the next unique identifier (UID) to be assigned to a new mesh,
 /// as well as a HashMap that stores all the existing meshes, indexed by their UIDs.
-pub 
-struct MeshState<'a, V>
+pub struct MeshState<'a, V>
 where
     V: VertexCore + Deserialize<'a> + Serialize,
 {
@@ -667,26 +714,21 @@ where
     pub meshes: HashMap<usize, MeshCore<'a, V>>,
 }
 //}}}
-//{{{ impl: MeshState   
+//{{{ impl: MeshState
 impl<'a, V> MeshState<'a, V>
 where
     V: VertexCore + Deserialize<'a> + Serialize,
 {
     const START_UID: usize = 5;
 
-    pub fn new() -> Self
-    {
+    pub fn new() -> Self {
         Self {
             next_uid: Self::START_UID,
             meshes: HashMap::new(),
         }
     }
 
-    pub fn add_mesh(
-        &mut self,
-        mut mesh: MeshCore<'a, V>,
-    ) -> usize
-    {
+    pub fn add_mesh(&mut self, mut mesh: MeshCore<'a, V>) -> usize {
         let uid = self.next_uid();
 
         mesh.uid = uid;
@@ -696,8 +738,7 @@ where
         uid
     }
 
-    fn next_uid(&mut self) -> usize
-    {
+    fn next_uid(&mut self) -> usize {
         let out = self.next_uid;
 
         self.next_uid += 1;
@@ -711,21 +752,14 @@ where
 //{{{ collection: StateError
 //{{{ enum: StateError
 #[derive(Debug)]
-pub enum StateError
-{
+pub enum StateError {
     CommandError(String),
 }
 //}}}
 //{{{ impl: Display for StateError
-impl std::fmt::Display for StateError
-{
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result
-    {
-        match self
-        {
+impl std::fmt::Display for StateError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
             StateError::CommandError(msg) => write!(f, "Command Error: {}", msg),
         }
     }
@@ -734,8 +768,7 @@ impl std::fmt::Display for StateError
 //}}}
 //}}}
 //{{{ trait: ViewStateCore
-pub trait ViewStateCore
-{
+pub trait ViewStateCore {
     fn update(&mut self);
     fn view_controller(&mut self) -> &mut EventController;
     fn view_uniform_buffer(&self) -> &[u8];
@@ -761,8 +794,7 @@ where
     ViewState: ViewStateCore + Default,
 {
     //{{{ fun: new
-    pub fn new() -> Self
-    {
+    pub fn new() -> Self {
         //{{{ trace
         info!("Creating new StateCore");
         //}}}
@@ -778,17 +810,12 @@ where
     }
     //}}}
     //{{{ fun: new_arc_mutex
-    pub fn new_arc_mutex() -> Arc<Mutex<Self>>
-    {
+    pub fn new_arc_mutex() -> Arc<Mutex<Self>> {
         Arc::new(Mutex::new(Self::new()))
     }
     //}}}
     //{{{ fun: launch_window
-    pub async fn launch_window(
-        &mut self,
-        event_loop: &ActiveEventLoop,
-    )
-    {
+    pub async fn launch_window(&mut self, event_loop: &ActiveEventLoop) {
         //{{{ trace
         info!("Launching window");
         //}}}
@@ -805,15 +832,12 @@ where
     //{{{ fun: handle_event
     pub fn handle_event(
         &mut self,
-        window_id: &winit::window::WindowId, 
+        window_id: &winit::window::WindowId,
         event: &winit::event::WindowEvent,
-    )
-    {
-        match event
-        {
+    ) {
+        match event {
             //{{{ case: MouseWheel
-            WindowEvent::MouseWheel { delta, .. } if self.has_window(window_id) =>
-            {
+            WindowEvent::MouseWheel { delta, .. } if self.has_window(window_id) => {
                 //{{{ trace
                 debug!("Mouse wheel: {:?}", delta);
                 //}}}
@@ -823,8 +847,7 @@ where
             }
             //}}}
             //{{{ case: MouseInput
-            WindowEvent::MouseInput { state, button, .. }if self.has_window(window_id) =>
-            {
+            WindowEvent::MouseInput { state, button, .. } if self.has_window(window_id) => {
                 //{{{ trace
                 debug!("Mouse input: {:?} {:?}", state, button);
                 //}}}
@@ -836,8 +859,7 @@ where
             }
             //}}}
             //{{{ case: CursorMoved
-            WindowEvent::CursorMoved { position, .. } if self.has_window(window_id) =>
-            {
+            WindowEvent::CursorMoved { position, .. } if self.has_window(window_id) => {
                 //{{{ trace
                 trace!("Cursor moved: {:?}", position);
                 //}}}
@@ -847,39 +869,35 @@ where
             }
             //}}}
             //{{{ case: KeyboardInput
-            WindowEvent::KeyboardInput { event, .. } if self.has_window(window_id) =>
-            {
+            WindowEvent::KeyboardInput { event, .. } if self.has_window(window_id) => {
                 //{{{ trace
                 debug!("Keyboard input: {:?}", event);
                 //}}}
-                match event.logical_key
-                {
-                    winit::keyboard::Key::Named(key) =>
-                    {
+                match event.logical_key {
+                    winit::keyboard::Key::Named(key) => {
                         self.view_state
                             .view_controller()
                             .key_input_update(event.state, key);
 
                         self.window_request_redraw();
                     }
-                    _ =>
-                    {}
+                    _ => {}
                 }
             }
             //}}}
             //{{{ case: ModifiersChanged
-            WindowEvent::ModifiersChanged(ev) if self.has_window(window_id) =>
-            {
+            WindowEvent::ModifiersChanged(ev) if self.has_window(window_id) => {
                 //{{{ trace
                 debug!("Modifiers changed: {:?}", ev);
                 //}}}
-                self.view_state.view_controller().key_modifiers_update(ev.state());
+                self.view_state
+                    .view_controller()
+                    .key_modifiers_update(ev.state());
                 self.window_request_redraw();
             }
             //}}}
             //{{{ case: Resized
-            WindowEvent::Resized(size) if self.has_window(window_id) =>
-            {
+            WindowEvent::Resized(size) if self.has_window(window_id) => {
                 //{{{ trace
                 debug!("Window resized: {:?}", size);
                 //}}}
@@ -892,8 +910,7 @@ where
             }
             //}}}
             //{{{ case: RedrawRequested
-            WindowEvent::RedrawRequested if self.has_window(window_id) =>
-            {
+            WindowEvent::RedrawRequested if self.has_window(window_id) => {
                 //{{{ trace
                 debug!("Redraw requested");
                 //}}}
@@ -903,22 +920,19 @@ where
                     .unwrap()
                     .update(&mut self.mesh_state, self.view_state.view_uniform_buffer());
 
-                match self.wgpu_state.as_mut().unwrap().render()
-                {
-                    Ok(()) =>
-                    {
+                match self.wgpu_state.as_mut().unwrap().render() {
+                    Ok(()) => {
                         //{{{ trace
                         info!("Render successful");
                         //}}}
                     }
-                    Err(e) =>
-                    {
+                    Err(e) => {
                         //{{{ trace
-                        error!("WGPU error: {}", e);    
+                        error!("WGPU error: {}", e);
                         //}}}
                     }
                 }
-            },
+            }
             //}}}
             //{{{ default
             _ => (),
@@ -928,57 +942,41 @@ where
     //..............................................................
     //}}}
     //{{{ fun: has_window
-    pub fn has_window(
-        &mut self,
-        window_id: &winit::window::WindowId,
-    ) -> bool
-    {
+    pub fn has_window(&mut self, window_id: &winit::window::WindowId) -> bool {
         self.wgpu_state.as_mut().unwrap().window.id() == *window_id
     }
     //..............................................................
     //}}}
     //{{{ fun: window_request_redraw
-    pub fn window_request_redraw(&mut self)
-    {
+    pub fn window_request_redraw(&mut self) {
         self.wgpu_state.as_mut().unwrap().window_request_redraw();
     }
     //..............................................................
     //}}}
     //{{{ fun: add_mesh
-    pub fn add_mesh(
-        &mut self,
-        mesh: MeshCore<'a, V>,
-    ) -> usize
-    {
+    pub fn add_mesh(&mut self, mesh: MeshCore<'a, V>) -> usize {
         let uid = self.mesh_state.add_mesh(mesh);
+        self.window_request_redraw();
         uid
     }
     //..............................................................
     //}}}
     //{{{ fun: get_mesh
-    pub fn get_mesh(
-        &self,
-        uid: usize,
-    ) -> Option<&MeshCore<'a, V>>
-    {
+    pub fn get_mesh(&self, uid: usize) -> Option<&MeshCore<'a, V>> {
         self.mesh_state.meshes.get(&uid)
     }
     //..............................................................
     //}}}
     //{{{ fun: get_mesh_mut
-    pub fn get_mesh_mut(
-        &mut self,
-        uid: usize,
-    ) -> Option<&mut MeshCore<'a, V>>
-    {
+    pub fn get_mesh_mut(&mut self, uid: usize) -> Option<&mut MeshCore<'a, V>> {
         self.mesh_state.meshes.get_mut(&uid)
     }
     //..............................................................
     //}}}
     //{{{ fun: clear_meshes
-    pub fn clear_meshes(&mut self)
-    {
+    pub fn clear_meshes(&mut self) {
         self.mesh_state.meshes.clear();
+        self.window_request_redraw();
     }
     //}}}
 }
@@ -986,12 +984,8 @@ where
 //..................................................................................................
 //}}}
 
-
 //-------------------------------------------------------------------------------------------------
 //{{{ mod: tests
 #[cfg(test)]
-mod tests
-{
-  
-}
+mod tests {}
 //}}}
