@@ -13,6 +13,7 @@ use crate::d3::mesh::{
     SphereDescriptor, TriangleDescriptor, Mesh
 };
 use crate::d3::state::{State, State3D};
+use crate::app::TopoHedralEvent;
 //}}}
 //{{{ std imports
 use core::net::SocketAddr;
@@ -23,6 +24,7 @@ use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc;
 use tonic::{transport::Server, Request, Response, Status};
 use topohedral_tracing::{error, info, topo_log};
+use winit::event_loop::EventLoopProxy;
 //}}}
 //--------------------------------------------------------------------------------------------------
 
@@ -303,6 +305,7 @@ pub async fn run_server(
     rpc_address: SocketAddr,
     shutdown_sender: mpsc::Sender<()>,
     mut shutdown_receiver: mpsc::Receiver<()>,
+    event_loop_proxy: EventLoopProxy<TopoHedralEvent>
 )
 {
     info!("Starting RPC server on port {}", rpc_address);
@@ -327,6 +330,10 @@ pub async fn run_server(
     {
         error!("Server error: {}", e);
     }
+    //{{{ trace
+    info!("Sending Shutdown Event");
+    //}}}
+    event_loop_proxy.send_event(TopoHedralEvent::RcpShutdown).unwrap();
 }
 //}}}
 

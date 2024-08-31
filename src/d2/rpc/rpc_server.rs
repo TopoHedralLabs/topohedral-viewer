@@ -15,6 +15,7 @@ use super::common::*;
 use super::super::mesh::{AxesDescriptor, SquareDescriptor, CircleDescriptor, Mesh};
 use super::super::state::{State, State2D};
 use crate::common::Validated;
+use crate::app::TopoHedralEvent;
 //}}}
 //{{{ std imports 
 use core::net::SocketAddr;
@@ -25,6 +26,7 @@ use std::sync::{Arc, Mutex};
 use topohedral_tracing::{error, info, topo_log};
 use tokio::sync::mpsc;
 use tonic::{transport::Server, Request, Response, Status};
+use winit::event_loop::EventLoopProxy;
 //}}}
 //--------------------------------------------------------------------------------------------------
 
@@ -195,21 +197,19 @@ impl d2rpc::state_service_server::StateService for StateServer
     {
         let addr = request.remote_addr();
         let msg = request.into_inner();
-
+        //{{{  trace
         info!(
             "Received kill_server request from {} on port {:?}",
             msg.client_name, addr
         );
-
+        info!("Sending Shutdown signal");
+        //}}}
         self.shutdown_sender.send(()).await.map_err(|e| {
             Status::internal(format!(
                 "Failed to send shutdown signal due to error: {}",
                 e
             ))
         })?;
-
-        // self.state.lock().unwrap()
-
         Ok(Response::new(d2rpc::KillServerResponse {}))
     }
     //}}}
@@ -221,6 +221,7 @@ pub async fn run_server(
     rpc_address: SocketAddr,
     shutdown_sender: mpsc::Sender<()>,
     mut shutdown_receiver: mpsc::Receiver<()>,
+    event_loop_proxy: EventLoopProxy<TopoHedralEvent>,
 )
 {
     info!("Starting RPC server on port {}", rpc_address);
@@ -245,6 +246,11 @@ pub async fn run_server(
     {
         error!("Server error: {}", e);
     }
+
+    //{{{ trace
+    info!("Sending Shutdown Event");
+    //}}}
+    event_loop_proxy.send_event(TopoHedralEvent::RcpShutdown).unwrap();
 }
 //}}}
 

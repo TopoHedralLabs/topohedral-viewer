@@ -299,7 +299,6 @@ impl ApplicationHandler<TopoHedralEvent> for TopoViewer<'static> {
             let shutdown_sender3 = shutdown_sender1.clone();
 
             self.shutdown_sender = Some(shutdown_sender2);
-            let ev_prox = self.event_loop_proxy.clone();
             self.tokio_runtime.spawn(async move  {
                 tokio::signal::ctrl_c().await.unwrap();
                 //{{{ trace
@@ -307,10 +306,6 @@ impl ApplicationHandler<TopoHedralEvent> for TopoViewer<'static> {
                 info!("Sending shutdown signal");
                 //}}}
                 shutdown_sender3.send(()).await.unwrap();
-                //{{{ trace
-                info!("Generationg shutdown event");
-                //}}}
-                ev_prox.send_event(TopoHedralEvent::RcpShutdown).unwrap();
             });
             //{{{ trace
             info!("Launching RPC server with socket: {}", socket);
@@ -323,12 +318,12 @@ impl ApplicationHandler<TopoHedralEvent> for TopoViewer<'static> {
 
                     let state_clone = self.state_2d.clone().unwrap();
                     let state_clone_2 = state_clone.clone();
-
+                    let ev_prox = self.event_loop_proxy.clone();
                     let handle = self.tokio_runtime.spawn(async move {
                         //{{{ trace
                         info!("Launching 2D RPC server");
                         //}}}
-                        d2::run_server(state_clone, socket, shutdown_sender1, shutdown_receiver)
+                        d2::run_server(state_clone, socket, shutdown_sender1, shutdown_receiver, ev_prox)
                             .await
                     });
 
@@ -344,12 +339,12 @@ impl ApplicationHandler<TopoHedralEvent> for TopoViewer<'static> {
 
                     let state_clone = self.state_3d.clone().unwrap();
                     let state_clone_2 = state_clone.clone();
-
+                    let ev_prox = self.event_loop_proxy.clone();
                     let handle = self.tokio_runtime.spawn(async move {
                         //{{{ trace
                         info!("Launching 3D RPC server");
                         //}}}
-                        d3::run_server(state_clone, socket, shutdown_sender1, shutdown_receiver)
+                        d3::run_server(state_clone, socket, shutdown_sender1, shutdown_receiver, ev_prox)
                             .await
                     });
 
