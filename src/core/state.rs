@@ -379,11 +379,12 @@ impl<'a> WgpuState<'a> {
         //{{{ trace
         info!("Compute the device and queue");
         //}}}
+        let features = wgpu::Features::POLYGON_MODE_LINE;
         let (device, queue) = adapter
             .request_device(
                 &wgpu::DeviceDescriptor {
                     label: Some("Device for Topoviewer"),
-                    required_features: wgpu::Features::empty(),
+                    required_features: features,
                     required_limits: wgpu::Limits::default(),
                 },
                 None,
@@ -602,6 +603,9 @@ impl<'a> WgpuState<'a> {
         //{{{ com: perform render passes
         {
             //{{{ com: initialize render pass
+            //{{{ trace
+            trace!("Initialising render pass");
+            //}}}
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Line Render Pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -631,44 +635,77 @@ impl<'a> WgpuState<'a> {
             //}}}
             //{{{ com: line render pass
             {
+                //{{{ trace
+                trace!("Setting up line render pass");
+                //}}}
                 render_pass.set_pipeline(&self.line_render_pipeline);
 
                 render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
 
                 for (uid, (num_indices, vertex_buffer, index_buffer)) in &self.wgpu_line_buffers {
+                    //{{{ trace
+                    trace!("Mesh {} has {} indices", uid, num_indices);
+                    trace!("Setting the vertex buffer");
+                    //}}}
                     render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
-
+                    //{{{ trace
+                    trace!("Setting the index buffer");
+                    //}}}
                     render_pass.set_index_buffer(index_buffer.slice(..), wgpu::IndexFormat::Uint32);
-
+                    //{{{ trace
+                    trace!("Drawing the mesh");
+                    //}}}
                     render_pass.draw_indexed(0..*num_indices, 0, 0..1)
                 }
             }
             //}}}
             //{{{ com: face render pass
             {
+                //{{{ trace
+                trace!("Stting the face render pass");
+                //}}}
                 render_pass.set_pipeline(&self.tri_face_render_pipeline);
                 render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
 
                 for (uid, (num_indices, vertex_buffer, index_buffer)) in &self.wgpu_tri_buffers {
+                    //{{{ trace
+                    trace!("Mesh {} has {} indices", uid, num_indices);
+                    trace!("Setting the vertex buffer");
+                    //}}} 
                     render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
-
+                    //{{{ trace
+                    trace!("Setting the index buffer");
+                    //}}}
                     render_pass.set_index_buffer(index_buffer.slice(..), wgpu::IndexFormat::Uint32);
-
+                    //{{{ trace
+                    trace!("Drawing the mesh");
+                    //}}}
                     render_pass.draw_indexed(0..*num_indices, 0, 0..1)
                 }
             }
             //}}}
             //{{{ com: edge render pass
             if let Some(tri_edge_render_pipeline) = &self.tri_edge_render_pipeline {
+                //{{{ trace
+                trace!("Pergforming triangle edge render pass");
+                //}}}
                 render_pass.set_pipeline(tri_edge_render_pipeline);
 
                 render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
 
                 for (uid, (num_indices, vertex_buffer, index_buffer)) in &self.wgpu_tri_buffers {
+                    //{{{ trace
+                    trace!("Mesh {} has {} indices", uid, num_indices);
+                    trace!("Setting the vertex buffer");
+                    //}}} 
                     render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
-
+                    //{{{ trace
+                    trace!("Setting the index buffer");
+                    //}}}
                     render_pass.set_index_buffer(index_buffer.slice(..), wgpu::IndexFormat::Uint32);
-
+                    //{{{ trace
+                    trace!("Drawing the mesh");
+                    //}}}
                     render_pass.draw_indexed(0..*num_indices, 0, 0..1)
                 }
             }
@@ -860,9 +897,7 @@ where
             //}}}
             //{{{ case: CursorMoved
             WindowEvent::CursorMoved { position, .. } if self.has_window(window_id) => {
-                //{{{ trace
-                trace!("Cursor moved: {:?}", position);
-                //}}}
+
                 self.view_state
                     .view_controller()
                     .cursor_moved_update(*position);
