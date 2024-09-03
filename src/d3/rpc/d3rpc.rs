@@ -150,6 +150,8 @@ pub struct CylinderDescriptor {
     pub tri_color: ::core::option::Option<Color>,
     #[prost(bool, tag = "8")]
     pub open: bool,
+    #[prost(enumeration = "CellType", tag = "9")]
+    pub cell_type: i32,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -176,6 +178,8 @@ pub struct SphereDescriptor {
     pub line_color: ::core::option::Option<Color>,
     #[prost(message, optional, tag = "7")]
     pub tri_color: ::core::option::Option<Color>,
+    #[prost(enumeration = "CellType", tag = "8")]
+    pub cell_type: i32,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]

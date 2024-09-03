@@ -105,6 +105,7 @@ message CylinderDescriptor {
     Color line_color = 6;
     Color tri_color = 7;
     bool open = 8;
+    CellType cell_type = 9;
 }
 
 message AddCylinderRequest {
@@ -121,6 +122,7 @@ message SphereDescriptor {
     uint32 n_long = 5;
     Color line_color = 6;
     Color tri_color = 7;
+    CellType cell_type = 8;
 }
 
 message AddSphereRequest {

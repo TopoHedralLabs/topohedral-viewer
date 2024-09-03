@@ -286,6 +286,7 @@ impl From<d3rpc::CylinderDescriptor> for CylinderDescriptor
             line_color: cd.line_color.unwrap().into(),
             tri_color: cd.tri_color.unwrap().into(),
             open: cd.open,
+            cell_type: cd.cell_type.into(),
         }
     }
 }
@@ -303,6 +304,7 @@ impl From<CylinderDescriptor> for d3rpc::CylinderDescriptor
             line_color: Some(cd.line_color.into()),
             tri_color: Some(cd.tri_color.into()),
             open: cd.open,
+            cell_type: cd.cell_type.into(),
         }
     }
 }
@@ -340,6 +342,7 @@ impl From<d3rpc::SphereDescriptor> for SphereDescriptor
             n_long: cd.n_long as usize,
             line_color: cd.line_color.unwrap().into(),
             tri_color: cd.tri_color.unwrap().into(),
+            cell_type: cd.cell_type.into(),
         }
     }
 }
@@ -356,6 +359,7 @@ impl From<SphereDescriptor> for d3rpc::SphereDescriptor
             n_long: cd.n_long as u32,
             line_color: Some(cd.line_color.into()),
             tri_color: Some(cd.tri_color.into()),
+            cell_type: cd.cell_type.into(),
         }
     }
 }
