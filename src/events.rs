@@ -14,7 +14,7 @@ use winit::dpi::{PhysicalPosition, PhysicalSize};
 
 //{{{ collection: MousseButtonPressedState
 //{{{ enum: MouseButtonPressedState
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum MouseButtonPressedState {
     NotPressed,
     LeftPressed,
@@ -33,6 +33,7 @@ impl Default for MouseButtonPressedState {
 //}}}
 //{{{ collection: KeyModifierState
 //{{{ enum: KeyModifierState
+#[derive(Debug, PartialEq)]
 pub enum KeyModifierState {
     NotModified,
     Shift,
@@ -52,7 +53,7 @@ impl Default for KeyModifierState {
 //}}}
 //{{{ collection: ResizedState
 //{{{ enum: ResizedState
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ResizedState {
     NotResized,
     Resized((f32, f32)),
@@ -227,8 +228,8 @@ impl EventController {
     }
     //}}}
     //{{{ fun: key_modifiers_update
-    /// This method is used to update the key modifier state, such as whether the Shift, Ctrl, or 
-    /// Alt keys are currently pressed. The `key_modifier_state` field in the `EventController` 
+    /// This method is used to update the key modifier state, such as whether the Shift, Ctrl, or
+    /// Alt keys are currently pressed. The `key_modifier_state` field in the `EventController`
     /// struct is updated based on the provided modifier state.
     ///
     /// # Parameters
@@ -255,8 +256,145 @@ impl EventController {
 //-------------------------------------------------------------------------------------------------
 //{{{ mod: tests
 #[cfg(test)]
-mod tests
-{
-  
+mod tests {
+
+    use super::*;
+
+    //{{{ test: test_mouse_wheel_update
+    #[test]
+    fn test_mouse_wheel_update() {
+        let mut event_controller = EventController::default();
+
+        // Test mouse wheel scroll
+        let s1 = winit::event::MouseScrollDelta::LineDelta(1.0, 1.0);
+        event_controller.mouse_wheel_update(s1);
+        assert_eq!(event_controller.mouse_wheel_delta, Some(1.0));
+
+        // Test subsequent mouse wheel scroll
+        let s2 = winit::event::MouseScrollDelta::PixelDelta(winit::dpi::PhysicalPosition {
+            x: 2.0,
+            y: 2.0,
+        });
+        event_controller.mouse_wheel_update(s2);
+        assert_eq!(event_controller.mouse_wheel_delta, Some(2.0));
+    }
+    //}}}
+    //{{{ test: test_mouse_input_update
+    #[test]
+    fn test_mouse_input_update() {
+        let mut event_controller = EventController::default();
+
+        // Test mouse button press
+        event_controller.mouse_input_update(
+            winit::event::ElementState::Pressed,
+            winit::event::MouseButton::Left,
+        );
+        assert_eq!(
+            event_controller.mouse_button_pressed_state,
+            MouseButtonPressedState::LeftPressed
+        );
+
+        // Test mouse button release
+        event_controller.mouse_input_update(
+            winit::event::ElementState::Released,
+            winit::event::MouseButton::Left,
+        );
+        assert_eq!(
+            event_controller.mouse_button_pressed_state,
+            MouseButtonPressedState::NotPressed
+        );
+
+        // Test other mouse button press
+        event_controller.mouse_input_update(
+            winit::event::ElementState::Pressed,
+            winit::event::MouseButton::Right,
+        );
+        assert_eq!(
+            event_controller.mouse_button_pressed_state,
+            MouseButtonPressedState::RightPressed
+        );
+    }
+    //}}}
+    //{{{ test: test_cursor_moved_update
+    #[test]
+    fn test_cursor_moved_update() {
+        let mut event_controller = EventController::default();
+
+        // Test mouse position update
+        event_controller.cursor_moved_update(PhysicalPosition { x: 100.0, y: 200.0 });
+        assert_eq!(event_controller.mouse_position[0], 100.0);
+        assert_eq!(event_controller.mouse_position[1], 200.0);
+        assert_eq!(event_controller.mouse_position_delta[0], 100.0);
+        assert_eq!(event_controller.mouse_position_delta[1], 200.0);
+
+        // Test subsequent mouse position update
+        event_controller.cursor_moved_update(PhysicalPosition { x: 150.0, y: 250.0 });
+        assert_eq!(event_controller.mouse_position[0], 150.0);
+        assert_eq!(event_controller.mouse_position[1], 250.0);
+        assert_eq!(event_controller.mouse_position_delta[0], 50.0);
+        assert_eq!(event_controller.mouse_position_delta[1], 50.0);
+    }
+    //}}}
+    //{{{ test: test_key_input_update
+    #[test]
+    fn test_key_input_update() {
+        let mut event_controller = EventController::default();
+
+        // Test arrow key press
+        event_controller.key_input_update(
+            winit::event::ElementState::Pressed,
+            winit::keyboard::NamedKey::ArrowLeft,
+        );
+        assert_eq!(event_controller.key_stroke_state, KeyStrokeState::Left);
+
+        // Test arrow key release
+        event_controller.key_input_update(
+            winit::event::ElementState::Released,
+            winit::keyboard::NamedKey::ArrowLeft,
+        );
+        assert_eq!(event_controller.key_stroke_state, KeyStrokeState::None);
+
+        // Test space key press
+        event_controller.key_input_update(
+            winit::event::ElementState::Pressed,
+            winit::keyboard::NamedKey::Space,
+        );
+        assert_eq!(event_controller.key_stroke_state, KeyStrokeState::Space);
+
+        // Test space key release 
+        event_controller.key_input_update(
+            winit::event::ElementState::Released,
+            winit::keyboard::NamedKey::Space,
+        );
+        assert_eq!(event_controller.key_stroke_state, KeyStrokeState::None);
+
+        // Test anything else
+        event_controller.key_input_update(
+            winit::event::ElementState::Pressed,
+            winit::keyboard::NamedKey::CapsLock,
+        );
+        assert_eq!(event_controller.key_stroke_state, KeyStrokeState::None);
+    }
+    //}}}
+    //{{{ test: test_key_modifiers_update
+    #[test]
+    fn test_key_modifiers_update() {
+        let mut event_controller = EventController::default();
+
+        // Test modifier key press
+        event_controller.key_modifiers_update(winit::keyboard::ModifiersState::SHIFT);
+        assert_eq!(
+            event_controller.key_modifier_state,
+            winit::keyboard::ModifiersState::SHIFT
+        );
+
+        // Test no modifier keys press
+        event_controller.key_modifiers_update(winit::keyboard::ModifiersState::empty());
+        assert_eq!(
+            event_controller.key_modifier_state,
+            winit::keyboard::ModifiersState::empty()
+        );
+    }
+    //}}}
 }
 //}}}
