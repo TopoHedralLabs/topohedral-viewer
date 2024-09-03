@@ -334,7 +334,7 @@ impl Default for Color {
 //}}}
 //{{{ collection: CellType
 //{{{ struct: CellType
-#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Copy)]
 pub enum CellType {
     None = 0,
     Line = 1,
