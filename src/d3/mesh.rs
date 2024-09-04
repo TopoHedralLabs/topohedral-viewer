@@ -5,7 +5,6 @@
 //--------------------------------------------------------------------------------------------------
 
 use core::panic;
-use std::cell;
 
 //{{{ crate imports
 use crate::common::{self, CellType, Color, Vec3};
