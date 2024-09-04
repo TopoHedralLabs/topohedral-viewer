@@ -7,6 +7,7 @@
 use super::d3rpc;
 use crate::common::{CellType, Color, Validated, Vec3};
 use crate::d3::mesh::*;
+use std::cell;
 //}}}
 //{{{ std imports
 use std::marker::PhantomData;
@@ -100,6 +101,7 @@ impl Validated for d3rpc::AddTriangleRequest {
                     && td.v3.is_some()
                     && td.line_color.is_some()
                     && td.tri_color.is_some()
+                    && td.cell_type > 0
             }
         };
         is_val
@@ -148,7 +150,8 @@ impl Validated for d3rpc::AddPlaneRequest {
                 pd.x_min < pd.x_max &&
                 pd.y_min < pd.y_max &&
                 pd.line_color.is_some() &&
-                pd.tri_color.is_some()
+                pd.tri_color.is_some() &&
+                pd.cell_type > 0
             }
         };
         is_val
@@ -207,7 +210,8 @@ impl Validated for d3rpc::AddCuboidRequest
                 cd.leny > 0.0 &&
                 cd.lenz > 0.0 &&
                 cd.line_color.is_some() &&
-                cd.tri_color.is_some()
+                cd.tri_color.is_some() &&
+                cd.cell_type > 0
             }
         };
         is_val
@@ -266,7 +270,8 @@ impl Validated for d3rpc::AddCylinderRequest
                 cd.height > 0.0 &&
                 cd.num_sides > 0 &&
                 cd.line_color.is_some() &&
-                cd.tri_color.is_some()
+                cd.tri_color.is_some() &&
+                cd.cell_type > 0
             }
         };
         is_val
@@ -310,6 +315,59 @@ impl From<CylinderDescriptor> for d3rpc::CylinderDescriptor
 }
 //}}}
 
+//{{{ impl Validated for d3rpc::AddDiscRequest
+impl Validated for d3rpc::AddDiscRequest
+{
+    fn is_valid(&self) -> bool {
+        let is_val = match self.disc_descriptor {
+            None => false,
+            Some(ref cd) => {
+                cd.origin.is_some() &&
+                cd.axis.is_some() &&
+                cd.radius > 0.0 &&
+                cd.num_sides> 0 &&
+                cd.line_color.is_some() &&
+                cd.tri_color.is_some() && 
+                cd.cell_type > 0
+            }
+        };
+        is_val
+    }
+}
+//}}}
+//{{{ impl From<d3rpc::DiscDescriptor> for DiscDescriptor
+impl From<d3rpc::DiscDescriptor> for DiscDescriptor 
+{
+    fn from(cd: d3rpc::DiscDescriptor) -> Self {
+        DiscDescriptor {
+            origin: cd.origin.unwrap().into(),
+            axis: cd.axis.unwrap().into(),
+            radius: cd.radius,
+            num_sides: cd.num_sides as usize,
+            line_color: cd.line_color.unwrap().into(),
+            tri_color: cd.tri_color.unwrap().into(),
+            cell_type: cd.cell_type.into(),
+            }
+    }
+}
+//}}}
+//{{{ impl From<DiscDescriptor> for d3rpc::DiscDescriptor
+impl From<DiscDescriptor> for d3rpc::DiscDescriptor 
+{
+    fn from(cd: DiscDescriptor) -> Self {
+        d3rpc::DiscDescriptor {
+            origin: Some(cd.origin.into()),
+            axis: Some(cd.axis.into()),
+            radius: cd.radius,
+            num_sides: cd.num_sides as u32,
+            line_color: Some(cd.line_color.into()),
+            tri_color: Some(cd.tri_color.into()),
+            cell_type: cd.cell_type.into(),
+            }
+    }
+}
+//}}}
+
 //{{{ impl Validated for d3rpc::AddSphereRequest
 impl Validated for d3rpc::AddSphereRequest
 {
@@ -323,7 +381,8 @@ impl Validated for d3rpc::AddSphereRequest
                 cd.n_lat > 0 &&
                 cd.n_long > 0 &&
                 cd.line_color.is_some() &&
-                cd.tri_color.is_some()
+                cd.tri_color.is_some() && 
+                cd.cell_type > 0
             }
         };
         is_val
@@ -423,7 +482,8 @@ impl Validated for d3rpc::AddMeshRequest
             None => false,
             Some(ref md) => {
                 md.vertices.len() > 0 &&
-                md.indices.len() > 0
+                md.indices.len() > 0 &&
+                md.cell_type > 0
             }
         };
         is_val

@@ -181,6 +181,35 @@ impl d3rpc::state_service_server::StateService for StateServer {
         out
     }
     //}}}
+    //{{{ fun: add_disc
+    async fn add_disc(
+        &self,
+        request: tonic::Request<d3rpc::AddDiscRequest>,
+    ) -> std::result::Result<tonic::Response<d3rpc::AddItemResponse>, tonic::Status> {
+        let addr = request.remote_addr();
+        let msg = request.into_inner();
+        //{{{ trace
+        info!(
+            "Received add_disc request from {} on port {:?}",
+            msg.client_name, addr
+        );
+        //}}}
+        let out = if msg.is_valid() {
+            let disc_desc = msg.disc_descriptor.unwrap().into();
+            let mut state = self.state.lock().unwrap();
+            let mesh_uid = state.add_disc(&disc_desc);
+            let add_disc_result = d3rpc::AddItemResponse {
+                id: mesh_uid as u64,
+            };
+            Ok(Response::new(add_disc_result))
+        }
+        else
+        {
+            Err(Status::invalid_argument("Invalid disc descriptor"))
+        };
+        out
+    }
+    //}}}
     //{{{ fun: add_sphere
     async fn add_sphere(
         &self,

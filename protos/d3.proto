@@ -114,6 +114,22 @@ message AddCylinderRequest {
 }
 //..................................................................................................
 
+message DiscDescriptor {
+    Vec3 origin = 1;
+    Vec3 axis = 2;
+    float radius = 3;
+    uint32 num_sides = 4;
+    Color line_color = 5;
+    Color tri_color = 6;
+    CellType cell_type = 7;
+}
+
+message AddDiscRequest {
+    string client_name = 1;
+    DiscDescriptor disc_descriptor = 2;
+}
+//..................................................................................................
+
 message SphereDescriptor {
     Vec3 origin = 1;
     Vec3 axis = 2;
@@ -179,6 +195,7 @@ service StateService {
     rpc AddPlane(AddPlaneRequest) returns (AddItemResponse) {}
     rpc AddCuboid(AddCuboidRequest) returns (AddItemResponse) {}
     rpc AddCylinder(AddCylinderRequest) returns (AddItemResponse) {}
+    rpc AddDisc(AddDiscRequest) returns (AddItemResponse) {}
     rpc AddSphere(AddSphereRequest) returns (AddItemResponse) {}
     rpc AddAxes(AddAxesRequest) returns (AddItemResponse) {}
     rpc AddMesh(AddMeshRequest) returns (AddItemResponse) {}
