@@ -5,36 +5,31 @@
 
 //{{{ crate imports 
 use super::super::mesh::{AxesDescriptor, SquareDescriptor, CircleDescriptor, Mesh};
-use super::super::state::{State, State2D};
-use crate::common::Vec2;
 use super::d2rpc::state_service_client::StateServiceClient;
-use std::path::PathBuf;
 use std::result::Result;
 use super::d2rpc;
 //}}}
 //{{{ std imports 
-use std::sync::{Arc, Mutex};
-use core::net::SocketAddr;
-use std::process::{Command, Child};
-use clap::error;
 //}}}
 //{{{ dep imports 
-use tokio::sync::mpsc;
-use tokio_stream::wrappers::ReceiverStream;
-use tonic::{transport::Server, Request, Response, Status};
+use tonic::Request;
 use topohedral_tracing::*;
 use thiserror::Error;
-
-use tokio::runtime::{Handle, Runtime};
-use tokio::task;
+use tokio::runtime::Runtime;
 use tokio::runtime;
 //}}}
 //--------------------------------------------------------------------------------------------------
 
-
+//{{{ collection: types
+/// The RpcClient type is an alias for the StateServiceClient from the tonic crate, which provides a client for the 2D viewer's state service RPC API.
 type RpcClient = StateServiceClient<tonic::transport::Channel>;
-
-//{{{ enum:Client2DError
+//}}}
+//{{{ enum: Error
+/// This enum defines the possible error types that can occur when using the RPC client.
+/// 
+/// - `IoError`: Represents an I/O error that occurred during the RPC call.
+/// - `TonicError`: Represents a transport-level error that occurred during the RPC call.
+/// - `StatusError`: Represents an error returned by the RPC server in the form of a Tonic status.
 #[derive(Debug, Error)]
 pub enum Error
 {
@@ -47,8 +42,15 @@ pub enum Error
 }
 //..............................................................................
 //}}}
-
 //{{{ struct: ClientD2
+/// The `Client2D` struct represents a client for the 2D viewer's RPC API.
+/// 
+/// It contains the following fields:
+/// - `client_name`: A `String` representing the name of the client.
+/// - `stub`: An `RpcClient` instance, which is an alias for the `StateServiceClient` from 
+///    the `tonic` crate, providing the client for the 2D viewer's state service RPC API.
+/// - `tokio_runtime`: A `Runtime` instance from the `tokio` crate, which is used to run the 
+///    RPC calls asynchronously.
 pub struct Client2D
 {
     client_name: String,
@@ -57,9 +59,10 @@ pub struct Client2D
 }
 //..............................................................................
 //}}}
+//{{{ impl Client2D
 impl Client2D 
 {
-
+    //{{{ fun: new
     pub fn new(port: usize) -> Result<Self, Error>
     {
         //{{{ trace
@@ -80,7 +83,8 @@ impl Client2D
             }
         )
     }
-
+    //}}}
+    //{{{ fun: add_axes
     pub fn add_axes(&mut self, axes_desc: AxesDescriptor) -> Result<usize, Error> {
 
         let axes_desc_rpc: d2rpc::AxesDescriptor = axes_desc.into();
@@ -94,7 +98,8 @@ impl Client2D
         let response = self.tokio_runtime.block_on(self.stub.add_axes(request))?;
         Ok(response.into_inner().id as usize)
     }
-
+    //}}}
+    //{{{ fun: add_square
     pub fn add_square(&mut self, square_desc: SquareDescriptor) -> Result<usize, Error> {
 
         let square_desc_rpc: d2rpc::SquareDescriptor = square_desc.into();
@@ -107,7 +112,8 @@ impl Client2D
         let response = self.tokio_runtime.block_on(self.stub.add_square(request))?;
         Ok(response.into_inner().id as usize)
     }
-
+    //}}}
+    //{{{ fun: add_circle
     pub fn add_circle(&mut self, circle_desc: CircleDescriptor) -> Result<usize, Error> {
         let circle_desc_rpc: d2rpc::CircleDescriptor = circle_desc.into();
         let request = Request::new(
@@ -119,7 +125,8 @@ impl Client2D
         let response = self.tokio_runtime.block_on(self.stub.add_circle(request))?;
         Ok(response.into_inner().id as usize)
     }
-
+    //}}}
+    //{{{ fun: add_mesh
     pub fn add_mesh<'a>(&mut self, mesh: Mesh<'a>) -> Result<usize, Error>
     {
         let mesh_desc_rpc: d2rpc::MeshDescriptor = mesh.clone().into();
@@ -132,5 +139,15 @@ impl Client2D
         let response = self.tokio_runtime.block_on(self.stub.add_mesh(request))?;
         Ok(response.into_inner().id as usize)
     }
-
+    //}}}
 }
+//}}}
+
+//-------------------------------------------------------------------------------------------------
+//{{{ mod: tests
+#[cfg(test)]
+mod tests
+{
+  
+}
+//}}}
