@@ -6,8 +6,7 @@
 //{{{ crate imports 
 use super::{
     camera::View,
-    mesh::{LineDescriptor, TriangleDescriptor, PlaneDescriptor, CuboidDescriptor, CylinderDescriptor, SphereDescriptor, 
-    AxesDescriptor, Mesh, Mesh3D},
+    mesh::{AxesDescriptor, CuboidDescriptor, CylinderDescriptor, DiscDescriptor, LineDescriptor, Mesh, Mesh3D, PlaneDescriptor, SphereDescriptor, TriangleDescriptor},
     vertex::Vertex
 };
 use crate::core::{StateCore, ViewStateCore};
@@ -81,6 +80,10 @@ pub trait State3D<'a>
         &mut self,
         cylinder: &CylinderDescriptor,
     ) -> usize;
+    fn add_disc(
+        &mut self,
+        disc: &DiscDescriptor,
+    ) -> usize;
     fn add_sphere(
         &mut self,
         sphere: &SphereDescriptor,
@@ -136,6 +139,14 @@ impl<'a> State3D<'a> for State<'a>
     {
         let cyl_mesh = Mesh::create_cylinder(cyl_desc);
         self.add_mesh(cyl_mesh)
+    }
+
+    fn add_disc(
+            &mut self,
+            disc: &DiscDescriptor,
+        ) -> usize {
+        let disc_mesh = Mesh::create_disc(disc);
+        self.add_mesh(disc_mesh)
     }
 
     fn add_sphere(
