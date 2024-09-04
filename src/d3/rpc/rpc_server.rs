@@ -17,7 +17,6 @@ use crate::app::TopoHedralEvent;
 //}}}
 //{{{ std imports
 use core::net::SocketAddr;
-use std::result::Result;
 use std::sync::{Arc, Mutex};
 //}}}
 //{{{ dep imports
@@ -299,7 +298,18 @@ impl d3rpc::state_service_server::StateService for StateServer {
         &self,
         request: tonic::Request<d3rpc::ClearRequest>,
     ) -> std::result::Result<tonic::Response<d3rpc::ClearResponse>, tonic::Status> {
-        todo!();
+
+        let addr = request.remote_addr();
+        let msg = request.into_inner();
+        //{{{ trace
+        info!(
+            "Received add_mesh request from {} on port {:?}",
+            msg.client_name, addr
+        );
+        //}}}
+        let mut state = self.state.lock().unwrap();
+        state.clear();
+        Ok(Response::new(d3rpc::ClearResponse {}))
     }
     //}}}
     //{{{ fun: kill_server
