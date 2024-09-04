@@ -775,6 +775,11 @@ where
         uid
     }
 
+    fn clear(&mut self) {
+        self.meshes.clear();
+        self.next_uid = Self::START_UID;
+    }   
+
     fn next_uid(&mut self) -> usize {
         let out = self.next_uid;
 
@@ -1009,8 +1014,8 @@ where
     //..............................................................
     //}}}
     //{{{ fun: clear_meshes
-    pub fn clear_meshes(&mut self) {
-        self.mesh_state.meshes.clear();
+    pub fn clear(&mut self) {
+        self.mesh_state.clear();
         self.window_request_redraw();
     }
     //}}}
