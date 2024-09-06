@@ -21,6 +21,14 @@ pub(crate) use state::State;
 pub(crate) use rpc::run_server;
 
 pub use mesh::{
-    AxesDescriptor, CuboidDescriptor, CylinderDescriptor, LineDescriptor, Mesh, PlaneDescriptor,
-    SphereDescriptor, Mesh3D
+    AxesDescriptor, 
+    CuboidDescriptor, 
+    CylinderDescriptor, 
+    LineDescriptor, 
+    Mesh, 
+    PlaneDescriptor,
+    SphereDescriptor, 
+    TriangleDescriptor,
+    Mesh3D
 };
+pub use rpc::Client3D;
