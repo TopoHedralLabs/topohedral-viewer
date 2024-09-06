@@ -140,6 +140,32 @@ impl Client2D
         Ok(response.into_inner().id as usize)
     }
     //}}}
+    //{{{ fun: clear
+    pub fn clear(&mut self) -> Result<(), Error>  
+    {
+        let request = Request::new(
+            d2rpc::ClearRequest {
+                client_name: self.client_name.clone(),
+            }
+        );
+        let _ = self.tokio_runtime.block_on(self.stub.clear(request))?;
+        Ok(())
+    }
+    //..............................................................................
+    //}}}
+    //{{{ fun: kill_server
+    pub fn kill_server(&mut self) -> Result<(), Error>
+    {
+        let request = Request::new(
+            d2rpc::KillServerRequest {
+                client_name: self.client_name.clone(),
+            }
+        );
+        let _ = self.tokio_runtime.block_on(self.stub.kill_server(request))?;
+        Ok(())
+    }
+    //..............................................................................
+    //}}}
 }
 //}}}
 
