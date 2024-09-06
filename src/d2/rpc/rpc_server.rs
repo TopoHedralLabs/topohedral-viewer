@@ -186,7 +186,9 @@ impl d2rpc::state_service_server::StateService for StateServer
             msg.client_name, addr
         );
         //}}}
-        todo!()
+        let mut state = self.state.lock().unwrap();
+        state.clear();
+        Ok(Response::new(d2rpc::ClearResponse {}))
     }
     //}}}
     //{{{ fun: kill_server
