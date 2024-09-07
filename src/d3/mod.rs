@@ -24,6 +24,7 @@ pub use mesh::{
     AxesDescriptor, 
     CuboidDescriptor, 
     CylinderDescriptor, 
+    DiscDescriptor,
     LineDescriptor, 
     Mesh, 
     PlaneDescriptor,
