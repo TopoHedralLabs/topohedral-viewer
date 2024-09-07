@@ -31,7 +31,7 @@ grpcurl -proto protos/d3.proto -plaintext -d '{"client_name": "client1", "sphere
 grpcurl -proto protos/d3.proto -plaintext -d '{"client_name": "client1", "sphere_descriptor": {"origin": {"x": 0, "y": -3, "z": 0}, "axis": {"x": 0, "y": 1, "z": 0}, "radius": 1, "n_lat": 10, "n_long": 50, "line_color": {"r": 1, "g": 1, "b": 1}, "tri_color": {"r": 1, "g": 1, "b": 0}, "cell_type": "LINE"}}' localhost:50051 d3rpc.StateService/AddSphere
 
 # Clear the scene
-grpcurl -proto protos/d3.proto -plaintext -d '{"client_name": "client1"}' localhost:50051 d3rpc.StateService/clear
+# grpcurl -proto protos/d3.proto -plaintext -d '{"client_name": "client1"}' localhost:50051 d3rpc.StateService/clear
 
 # Kill the server
-grpcurl -proto protos/d3.proto -plaintext -d '{"client_name": "client1"}' localhost:50051 d3rpc.StateService/KillServer
+# grpcurl -proto protos/d3.proto -plaintext -d '{"client_name": "client1"}' localhost:50051 d3rpc.StateService/KillServer
