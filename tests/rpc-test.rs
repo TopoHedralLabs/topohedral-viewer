@@ -211,7 +211,7 @@ fn d3_rpc_test() {
         //{{{ trace
         info!("Adding planes");
         //}}}
-        let plane_id1 = client.add_plane(PlaneDescriptor{
+        let plane_id1 = client.add_plane(d3::PlaneDescriptor{
             origin: Vec3::new(0.0, 0.0, 2.0),
             x_axis: Vec3::new(1.0, 0.0, 0.0),
             y_axis: Vec3::new(0.0, 1.0, 0.0),
@@ -224,7 +224,7 @@ fn d3_rpc_test() {
             cell_type: CellType::Triangle,
         }).unwrap();
         assert_eq!(plane_id1, 8);
-        let plane_id2 = client.add_plane(PlaneDescriptor{
+        let plane_id2 = client.add_plane(d3::PlaneDescriptor{
             origin: Vec3::new(0.0, 0.0, 3.0),
             x_axis: Vec3::new(1.0, 0.0, 0.0),
             y_axis: Vec3::new(0.0, 1.0, 0.0),
@@ -237,6 +237,131 @@ fn d3_rpc_test() {
             cell_type: CellType::Line,
         }).unwrap();
         assert_eq!(plane_id2, 9);
+        //}}}
+        //{{{ com: add cuboids
+        let cuboid_id1 = client.add_cuboid(d3::CuboidDescriptor{
+            origin: Vec3::new(2.0, 2.0, 2.0),
+            x_axis: Vec3::new(1.0, 0.0, 0.0),
+            y_axis: Vec3::new(0.0, 1.0, 0.0),
+            z_axis: Vec3::new(0.0, 0.0, 1.0),
+            lenx: 1.0,
+            leny: 1.0,
+            lenz: 1.0,
+            line_color: Color::Red,
+            tri_color: Color::Green,
+            cell_type: CellType::Triangle,
+        }).unwrap();
+        assert_eq!(cuboid_id1, 10);
+
+        let cuboid_id2 = client.add_cuboid(d3::CuboidDescriptor{
+            origin: Vec3::new(5.0, 2.0, 2.0),
+            x_axis: Vec3::new(1.0, 0.0, 0.0),
+            y_axis: Vec3::new(0.0, 1.0, 0.0),
+            z_axis: Vec3::new(0.0, 0.0, 1.0),
+            lenx: 1.0,
+            leny: 1.0,
+            lenz: 1.0,
+            line_color: Color::Red,
+            tri_color: Color::Green,
+            cell_type: CellType::Line,
+        }).unwrap();
+        assert_eq!(cuboid_id2, 11);
+        //}}}
+        //{{{ com: add cylinders
+        let cyl_id1 = client.add_cylinder(d3::CylinderDescriptor{
+            origin: Vec3::new(-2.0, -2.0, 0.0),
+            axis: Vec3::new(0.0, 0.0, 1.0),
+            radius: 1.0,
+            height: 3.0,
+            num_sides: 20,
+            line_color: Color::Red,
+            tri_color: Color::Green,
+            open: false,
+            cell_type: CellType::Triangle,
+        }).unwrap();
+        assert_eq!(cyl_id1, 12);
+        let cyl_id2 = client.add_cylinder(d3::CylinderDescriptor{
+            origin: Vec3::new(-5.0, -2.0, 0.0),
+            axis: Vec3::new(0.0, 0.0, 1.0),
+            radius: 1.0,
+            height: 3.0,
+            num_sides: 20,
+            line_color: Color::Purple,
+            tri_color: Color::Gray,
+            open: false,
+            cell_type: CellType::Triangle,
+        }).unwrap();
+        assert_eq!(cyl_id2, 13);
+        let cyl_id3 = client.add_cylinder(d3::CylinderDescriptor{
+            origin: Vec3::new(-2.0, -5.0, 0.0),
+            axis: Vec3::new(0.0, 0.0, 1.0),
+            radius: 1.0,
+            height: 3.0,
+            num_sides: 20,
+            line_color: Color::Red,
+            tri_color: Color::Green,
+            open: true,
+            cell_type: CellType::Triangle,
+        }).unwrap();
+        assert_eq!(cyl_id3, 14);
+        let cyl_id4 = client.add_cylinder(d3::CylinderDescriptor{
+            origin: Vec3::new(-5.0, -5.0, 0.0),
+            axis: Vec3::new(0.0, 0.0, 1.0),
+            radius: 1.0,
+            height: 3.0,
+            num_sides: 20,
+            line_color: Color::Purple,
+            tri_color: Color::Gray,
+            open: true,
+            cell_type: CellType::Triangle,
+        }).unwrap();
+        assert_eq!(cyl_id4, 15);
+        //}}}
+        //{{{ com: add discs
+        let disc_id1 = client.add_disc(d3::DiscDescriptor{
+            origin: Vec3::new(5.0, 0.0, 0.0),
+            axis: Vec3::new(1.0, 0.0, 0.0),
+            radius: 1.0,
+            num_sides: 20,
+            line_color: Color::Red,
+            tri_color: Color::Green,
+            cell_type: CellType::Triangle,
+        }).unwrap();
+        assert_eq!(disc_id1, 16);
+        let disc_id2 = client.add_disc(d3::DiscDescriptor{
+            origin: Vec3::new(6.0, 0.0, 0.0),
+            axis: Vec3::new(1.0, 0.0, 0.0),
+            radius: 1.0,
+            num_sides: 20,
+            line_color: Color::Red,
+            tri_color: Color::Green,
+            cell_type: CellType::Line,
+        }).unwrap();
+        assert_eq!(disc_id2, 17);
+        //}}}
+        //{{{ com: add spheres
+        let sphere_id1 = client.add_sphere(d3::SphereDescriptor{
+            origin: Vec3::new(0.0, -6.0, 0.0),
+            axis: Vec3::new(0.0, 1.0, 0.0), 
+            radius: 1.0,
+            n_lat: 20, 
+            n_long: 20,
+            line_color: Color::Red,
+            tri_color: Color::Green,
+            cell_type: CellType::Triangle,
+        }).unwrap();    
+        assert_eq!(sphere_id1, 18);
+        let sphere_id2 = client.add_sphere(d3::SphereDescriptor{
+            origin: Vec3::new(0.0, -3.0, 0.0),
+            axis: Vec3::new(0.0, 1.0, 0.0), 
+            radius: 1.0,
+            n_lat: 20, 
+            n_long: 20,
+            line_color: Color::Red,
+            tri_color: Color::Green,
+            cell_type: CellType::Line,
+        }).unwrap();    
+        assert_eq!(sphere_id2, 19);
         //}}}
         //{{{ com: clear and kill server
         sleep(Duration::from_millis(10000));
