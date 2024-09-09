@@ -4,7 +4,6 @@
 //! API for each type of item. The general item will simply take a mesh and draw it.
 //--------------------------------------------------------------------------------------------------
 
-use core::panic;
 
 //{{{ crate imports
 use crate::common::{self, CellType, Color, Vec3};
@@ -12,13 +11,23 @@ use crate::core::MeshCore;
 use crate::d3::vertex::{Vertex, VertexDescriptor};
 //}}}
 //{{{ std imports
+use core::panic;
 //}}}
 //{{{ dep imports
+use thiserror::Error;
 //}}}
 //--------------------------------------------------------------------------------------------------
 
 //{{{ collection: constants and type
 pub type Mesh<'a> = MeshCore<'a, Vertex>;
+//}}}
+//{{{ enum: Error
+#[derive(Debug, Error)]
+pub enum Error 
+{
+    #[error("Indices out of bounds")]
+    IndexOutOfBounds,
+}
 //}}}
 //{{{ struct: LineDescriptor
 /// This struct encapuslates the geometric information needed to fully specify a line.
@@ -181,6 +190,8 @@ pub trait Mesh3D<'a> {
     fn create_disc(disc: &DiscDescriptor) -> Self;
     fn create_sphere(sphere: &SphereDescriptor) -> Self;
     fn create_axes(axes: &AxesDescriptor) -> Self;
+    fn add_vertex(&mut self, v: &Vec3, normal: &Vec3, line_color: &Color, tri_color: &Color);
+    fn add_triangle_indices(&mut self, i1: u32, i2: u32, i3: u32) -> Result<(), Error> ;
     fn add_line(&mut self, v1: &Vec3, v2: &Vec3, line_color: &Color, tri_color: &Color);
     fn add_triangle(
         &mut self,
@@ -582,7 +593,7 @@ impl<'a> Mesh3D<'a> for Mesh<'a> {
     }
     //..............................................................................
     //}}}
-    //{{{ fn: create_sphere
+    //{{{ fun: create_sphere
     fn create_sphere(sphere_disc: &SphereDescriptor) -> Self {
         //{{{ locals
         let origin = sphere_disc.origin;
@@ -676,7 +687,7 @@ impl<'a> Mesh3D<'a> for Mesh<'a> {
         out
     }
     //}}}
-    //{{{ fn: create_axes
+    //{{{ fun: create_axes
     fn create_axes(axes_disc: &AxesDescriptor) -> Self {
         let mut out = Self::from_num_lines(3);
         let glob_origin = axes_disc.origin;
@@ -708,7 +719,29 @@ impl<'a> Mesh3D<'a> for Mesh<'a> {
         out
     }
     //}}}
-    //{{{ fn: add_line
+    //{{{ fun: add_vertex
+    fn add_vertex(&mut self, v: &Vec3, normal: &Vec3, line_color: &Color, tri_color: &Color) 
+    {
+        self.append_vertex(&Vertex::new(&VertexDescriptor {
+            position: *v,
+            normal: *normal,
+            line_color: *line_color,
+            triangle_color: *tri_color,
+        }));
+    }
+    //}}}
+    //{{{ fun: add_line_indices
+    fn add_triangle_indices(&mut self, i1: u32, i2: u32, i3: u32) -> Result<(), Error>  {
+        if i1 <= self.num_vertices() as u32 && i2 <= self.num_vertices() as u32 && i3 <= self.num_vertices() as u32 {
+            self.append_indices(&[i1, i2, i3]);
+            Ok(())
+        }
+        else {
+            Err(Error::IndexOutOfBounds)
+        }
+    }
+    //}}}
+    //{{{ fun: add_line
     fn add_line(&mut self, v1: &Vec3, v2: &Vec3, line_color: &Color, tri_color: &Color) {
         assert!(self.is_line());
 
@@ -730,7 +763,7 @@ impl<'a> Mesh3D<'a> for Mesh<'a> {
         }));
     }
     //}}}
-    //{{{ fn: add_triangle
+    //{{{ fun: add_triangle
     fn add_triangle(
         &mut self,
         v1: &Vec3,
