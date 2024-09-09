@@ -1,28 +1,36 @@
 //! This module contains the implementation of the `Mesh` struct for the 2D viewer.
 //!
-//! This module defines the set of items which may be  drawn in the 2D viewer and provides an 
-//! API for each type of item. The general item will simply take a mesh and draw it. 
+//! This module defines the set of items which may be  drawn in the 2D viewer and provides an
+//! API for each type of item. The general item will simply take a mesh and draw it.
 //--------------------------------------------------------------------------------------------------
 
-//{{{ crate imports 
+//{{{ crate imports
+use super::vertex::{Vertex, VertexDescriptor};
 use crate::common::*;
 use crate::core::MeshCore;
-use super::vertex::{Vertex, VertexDescriptor};
 //}}}
-//{{{ std imports 
+//{{{ std imports
 //}}}
-//{{{ dep imports 
-use serde::{Deserialize, Serialize};    
+//{{{ dep imports
+use serde::{Deserialize, Serialize};
+use thiserror::Error;
 //}}}
 //--------------------------------------------------------------------------------------------------
 
 //{{{ type: Mesh
 pub type Mesh<'a> = MeshCore<'a, Vertex>;
 //}}}
+//{{{ enum: Error
+#[derive(Debug, Error)]
+pub enum Error 
+{
+    #[error("Indices out of bounds")]
+    IndexOutOfBounds,
+}
+//}}}
 //{{{ struct: AxesDescriptor
 #[derive(Deserialize, Serialize)]
-pub struct AxesDescriptor
-{
+pub struct AxesDescriptor {
     pub origin: Vec2,
     pub x_axis: Vec2,
     pub y_axis: Vec2,
@@ -33,12 +41,11 @@ pub struct AxesDescriptor
 //}}}
 //{{{ struct: SquareDescriptor
 #[derive(Deserialize, Serialize)]
-pub struct SquareDescriptor
-{
+pub struct SquareDescriptor {
     pub origin: Vec2,
     pub x_axis: Vec2,
     pub y_axis: Vec2,
-    pub lenx: f32, 
+    pub lenx: f32,
     pub leny: f32,
     pub line_color: Color,
     pub tri_color: Color,
@@ -48,8 +55,7 @@ pub struct SquareDescriptor
 //}}}
 //{{{ struct: CircleDescriptor
 #[derive(Deserialize, Serialize)]
-pub struct CircleDescriptor
-{
+pub struct CircleDescriptor {
     pub center: Vec2,
     pub radius: f32,
     pub num_sides: u32,
@@ -67,32 +73,21 @@ pub struct CircleDescriptor
 /// - `create_axes`: Creates a mesh representing a set of coordinate axes.
 /// - `create_square`: Creates a mesh representing a 2D square.
 /// - `create_circle`: Creates a mesh representing a 2D circle.
-/// - `add_line`: Adds a line segment to the mesh.
-/// - `add_triangle`: Adds a triangle to the mesh.
+/// - `add_vertex`: Adds a single vertex to the mesh.
+/// - `add_line_indices`: Adds a line segment to the mesh using indices which refer to vertices 
+///    already in the mesh.
+/// - `add_line`: Adds a line segment to the mesh, both the vertices and the indices are created.
+/// - `add_triangle`: Adds a triangle to the mesh, both the vertices and the indices are created.
 ///
-/// Implementations of this trait can be used to generate and manipulate 2D meshes for various purposes, such as rendering or visualization.
-pub trait Mesh2D<'a>
-{
-    fn create_axes(
-        axes: &AxesDescriptor,
-    ) -> Self;
-
-    fn create_square(
-        square: &SquareDescriptor,
-    ) -> Self;
-
-    fn create_circle(
-        circle: &CircleDescriptor,
-    ) -> Self;
-
-    fn add_line(
-        &mut self,
-        v1: &Vec2,
-        v2: &Vec2,
-        line_color: &Color,
-        tri_color: &Color,
-    );
-
+/// Implementations of this trait can be used to generate and manipulate 2D meshes for various 
+/// purposes, such as rendering or visualization.
+pub trait Mesh2D<'a> {
+    fn create_axes(axes: &AxesDescriptor) -> Self;
+    fn create_square(square: &SquareDescriptor) -> Self;
+    fn create_circle(circle: &CircleDescriptor) -> Self;
+    fn add_vertex(&mut self, v: &Vec2, lin_color: &Color, tri_color: &Color);
+    fn add_line_indices(&mut self, i1: u32, i2: u32) -> Result<(), Error>;
+    fn add_line(&mut self, v1: &Vec2, v2: &Vec2, line_color: &Color, tri_color: &Color);
     fn add_triangle(
         &mut self,
         v1: &Vec2,
@@ -105,13 +100,9 @@ pub trait Mesh2D<'a>
 //..................................................................................................
 //}}}
 //{{{ impl: Mesh2D for Mesh
-impl<'a> Mesh2D<'a> for Mesh<'a>
-{
+impl<'a> Mesh2D<'a> for Mesh<'a> {
     //{{{ fun: create_axes
-    fn create_axes(
-        axes: &AxesDescriptor,
-    ) -> Self
-    {
+    fn create_axes(axes: &AxesDescriptor) -> Self {
         let mut mesh = Mesh::from_num_lines(2);
         let v1 = axes.origin - axes.x_axis * axes.neg_len;
         let v2 = axes.origin + axes.x_axis * axes.pos_len;
@@ -120,7 +111,6 @@ impl<'a> Mesh2D<'a> for Mesh<'a>
         let v4 = axes.origin + axes.y_axis * axes.pos_len;
         mesh.add_line(&v3, &v4, &Color::Green, &Color::default());
         mesh
-
     }
     //}}}
     //{{{ fun: create_square
@@ -134,18 +124,15 @@ impl<'a> Mesh2D<'a> for Mesh<'a>
     /// The function calculates the vertices of the square based on the `origin`, `x_axis`, `y_axis`, `lenx`, and `leny` fields of the `SquareDescriptor`. It then adds the lines or triangles to the mesh using the `add_line` and `add_triangle` methods.
     ///
     /// If the `cell_type` field of the `SquareDescriptor` is not `CellType::Line` or `CellType::Triangle`, the function will panic with the message "Unknown cell type".
-    fn create_square(
-        square_disc: &SquareDescriptor,
-    ) -> Self
-    {
-        match(square_disc.cell_type) {
+    fn create_square(square_disc: &SquareDescriptor) -> Self {
+        match (square_disc.cell_type) {
             //{{{ case: CellType::Line
             CellType::Line => {
                 let mut mesh = Mesh::from_num_lines(4);
 
                 let o = square_disc.origin;
                 let dx = square_disc.x_axis * square_disc.lenx;
-                let dy =  square_disc.y_axis * square_disc.leny;
+                let dy = square_disc.y_axis * square_disc.leny;
 
                 let v0 = o;
                 let v1 = o + dx;
@@ -156,7 +143,7 @@ impl<'a> Mesh2D<'a> for Mesh<'a>
                 mesh.add_line(&v2, &v3, &square_disc.line_color, &square_disc.tri_color);
                 mesh.add_line(&v3, &v0, &square_disc.line_color, &square_disc.tri_color);
                 mesh
-            },
+            }
             //}}}
             //{{{ case: CellType::Triangle
             CellType::Triangle => {
@@ -164,45 +151,50 @@ impl<'a> Mesh2D<'a> for Mesh<'a>
 
                 let o = square_disc.origin;
                 let dx = square_disc.x_axis * square_disc.lenx;
-                let dy =  square_disc.y_axis * square_disc.leny;
+                let dy = square_disc.y_axis * square_disc.leny;
 
                 let v0 = o;
                 let v1 = o + dx;
                 let v2 = o + dx + dy;
                 let v3 = o + dy;
-                mesh.add_triangle(&v0, &v1, &v2,&square_disc.line_color, &square_disc.tri_color);
-                mesh.add_triangle(&v0, &v2, &v3,&square_disc.line_color, &square_disc.tri_color); 
+                mesh.add_triangle(
+                    &v0,
+                    &v1,
+                    &v2,
+                    &square_disc.line_color,
+                    &square_disc.tri_color,
+                );
+                mesh.add_triangle(
+                    &v0,
+                    &v2,
+                    &v3,
+                    &square_disc.line_color,
+                    &square_disc.tri_color,
+                );
                 mesh
-            },
+            }
             //}}}
             //{{{ default
             _ => {
                 panic!("Unknown cell type");
-            }
-            //}}}
+            } //}}}
         }
-
-
     }
     //}}}
     //{{{ fun: create_circle
-    fn create_circle(
-        circle: &CircleDescriptor,
-    ) -> Self
-    {
+    fn create_circle(circle: &CircleDescriptor) -> Self {
         match circle.cell_type {
             //{{{ case: CellType::Line
             CellType::Line => {
-
                 let mut mesh = Mesh::from_num_lines(circle.num_sides as usize);
                 let pi = std::f32::consts::PI;
                 let c = circle.center;
                 let r = circle.radius;
 
                 for i in 0..circle.num_sides {
-                    let ii = (i+1) % circle.num_sides;
-                    let angle1 = (i as f32   / circle.num_sides as f32) *  2.0 * pi;
-                    let angle2 = (ii as f32   / circle.num_sides as f32) *  2.0 * pi;
+                    let ii = (i + 1) % circle.num_sides;
+                    let angle1 = (i as f32 / circle.num_sides as f32) * 2.0 * pi;
+                    let angle2 = (ii as f32 / circle.num_sides as f32) * 2.0 * pi;
                     let (sin_theta1, cos_theta1) = angle1.sin_cos();
                     let (sin_theta2, cos_theta2) = angle2.sin_cos();
                     let p1 = c + r * Vec2::new(cos_theta1, sin_theta1);
@@ -210,7 +202,7 @@ impl<'a> Mesh2D<'a> for Mesh<'a>
                     mesh.add_line(&p1, &p2, &circle.line_color, &circle.tri_color);
                 }
                 mesh
-            },
+            }
             //}}}
             //{{{ case: CellType::Triangle
             CellType::Triangle => {
@@ -220,9 +212,9 @@ impl<'a> Mesh2D<'a> for Mesh<'a>
                 let r = circle.radius;
 
                 for i in 0..circle.num_sides {
-                    let ii = (i+1) % circle.num_sides;
-                    let angle1 = (i as f32   / circle.num_sides as f32) *  2.0 * pi;
-                    let angle2 = (ii as f32   / circle.num_sides as f32) *  2.0 * pi;
+                    let ii = (i + 1) % circle.num_sides;
+                    let angle1 = (i as f32 / circle.num_sides as f32) * 2.0 * pi;
+                    let angle2 = (ii as f32 / circle.num_sides as f32) * 2.0 * pi;
                     let (sin_theta1, cos_theta1) = angle1.sin_cos();
                     let (sin_theta2, cos_theta2) = angle2.sin_cos();
                     let p1 = c + r * Vec2::new(cos_theta1, sin_theta1);
@@ -238,27 +230,40 @@ impl<'a> Mesh2D<'a> for Mesh<'a>
         }
     }
     //}}}
-    //{{{ fun: add_line
-    fn add_line(
-        &mut self,
-        v1: &Vec2,
-        v2: &Vec2,
-        line_color: &Color,
-        tri_color: &Color,
-    )
+    //{{{ fun: add_vertex
+    fn add_vertex(&mut self, v: &Vec2, lin_color: &Color, tri_color: &Color) {
+        self.append_vertex(&Vertex::new(&VertexDescriptor {
+            position: *v,
+            line_color: *lin_color,
+            triangle_color: *tri_color,
+        }));
+    }
+    //}}}
+    //{{{ fun: add_line_indices
+    fn add_line_indices(&mut self, i1: u32, i2: u32) -> Result<(), Error>
     {
+        if i1 < self.num_vertices() as u32 && i2 < self.num_vertices() as u32 {
+            self.append_indices(&[i1, i2]);
+            Ok(())
+        } else {
+            Err(Error::IndexOutOfBounds)
+        }
+    }
+    //}}}
+    //{{{ fun: add_line
+    fn add_line(&mut self, v1: &Vec2, v2: &Vec2, line_color: &Color, tri_color: &Color) {
         assert!(self.is_line());
 
         let nv = self.num_vertices() as u32;
         let indices = [nv, nv + 1];
         self.append_indices(&indices);
 
-        self.append_vertex(&Vertex::new(&VertexDescriptor{
+        self.append_vertex(&Vertex::new(&VertexDescriptor {
             position: *v1,
             line_color: *line_color,
             triangle_color: *tri_color,
         }));
-        self.append_vertex(&Vertex::new(&VertexDescriptor{
+        self.append_vertex(&Vertex::new(&VertexDescriptor {
             position: *v2,
             line_color: *line_color,
             triangle_color: *tri_color,
@@ -273,24 +278,23 @@ impl<'a> Mesh2D<'a> for Mesh<'a>
         v3: &Vec2,
         line_color: &Color,
         tri_color: &Color,
-    )
-    {
+    ) {
         assert!(self.is_triangle());
         let nv = self.num_vertices() as u32;
         let indices = [nv, nv + 1, nv + 2];
         self.append_indices(&indices);
 
-        self.append_vertex(&Vertex::new(&VertexDescriptor{
+        self.append_vertex(&Vertex::new(&VertexDescriptor {
             position: *v1,
             line_color: *line_color,
             triangle_color: *tri_color,
         }));
-        self.append_vertex(&Vertex::new(&VertexDescriptor{
+        self.append_vertex(&Vertex::new(&VertexDescriptor {
             position: *v2,
             line_color: *line_color,
             triangle_color: *tri_color,
         }));
-        self.append_vertex(&Vertex::new(&VertexDescriptor{
+        self.append_vertex(&Vertex::new(&VertexDescriptor {
             position: *v3,
             line_color: *line_color,
             triangle_color: *tri_color,
@@ -304,15 +308,13 @@ impl<'a> Mesh2D<'a> for Mesh<'a>
 //-------------------------------------------------------------------------------------------------
 //{{{ mod: tests
 #[cfg(test)]
-mod tests
-{
-  
+mod tests {
+
     use super::*;
 
     #[test]
-    fn create_axes_test()
-    {
-        let axes_disc = AxesDescriptor{
+    fn create_axes_test() {
+        let axes_disc = AxesDescriptor {
             origin: Vec2::new(0.0, 0.0),
             x_axis: Vec2::new(1.0, 0.0),
             y_axis: Vec2::new(0.0, 1.0),
@@ -323,9 +325,8 @@ mod tests
     }
 
     #[test]
-    fn create_square_test()
-    {
-        let square_disc = SquareDescriptor{
+    fn create_square_test() {
+        let square_disc = SquareDescriptor {
             origin: Vec2::new(0.0, 0.0),
             x_axis: Vec2::new(1.0, 0.0),
             y_axis: Vec2::new(0.0, 1.0),
@@ -337,7 +338,5 @@ mod tests
         };
         let mesh = Mesh::create_square(&square_disc);
     }
-
-
 }
 //}}}
