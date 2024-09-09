@@ -21,7 +21,8 @@ use tokio::runtime;
 //--------------------------------------------------------------------------------------------------
 
 //{{{ collection: types
-/// The RpcClient type is an alias for the StateServiceClient from the tonic crate, which provides a client for the 2D viewer's state service RPC API.
+/// The RpcClient type is an alias for the StateServiceClient from the tonic crate, which provides 
+/// a client for the 2D viewer's state service RPC API.
 type RpcClient = StateServiceClient<tonic::transport::Channel>;
 //}}}
 //{{{ enum: Error
