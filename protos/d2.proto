@@ -44,6 +44,18 @@ message AddAxesRequest {
 }
 // .................................................................................................
 
+message LineDescriptor {
+    Vec2 v1 = 1;
+    Vec2 v2 = 2;
+    Color color = 3;
+}
+
+message AddLineRequest {
+    string client_name = 1;
+    LineDescriptor line_descriptor = 2;
+}
+// .................................................................................................
+
 message SquareDescriptor {
     Vec2 origin = 1;
     Vec2 x_axis = 2;
@@ -104,6 +116,7 @@ message KillServerResponse {}
 
 service StateService {
     rpc AddAxes(AddAxesRequest) returns (AddItemResponse);
+    rpc AddLine(AddLineRequest) returns (AddItemResponse);
     rpc AddSquare(AddSquareRequest) returns (AddItemResponse);
     rpc AddCircle(AddCircleRequest) returns (AddItemResponse);
     rpc AddMesh(AddMeshRequest) returns (AddItemResponse);

@@ -7,7 +7,7 @@
 //{{{ crate imports 
 use crate::common::{Vec2, Color, CellType, Validated};
 use super::d2rpc;
-use super::super::mesh::{AxesDescriptor, SquareDescriptor, CircleDescriptor, Mesh};
+use super::super::mesh::{AxesDescriptor, LineDescriptor, SquareDescriptor, CircleDescriptor, Mesh};
 //}}}
 //{{{ std imports 
 use std::marker::PhantomData;
@@ -112,6 +112,57 @@ impl From<AxesDescriptor> for d2rpc::AxesDescriptor
             neg_len: axes_desc.neg_len,
         };
         axes_desc_out
+    }
+}
+//}}}
+
+//{{{ impl: Validated for d2rpc::AddLineRequest   
+impl Validated for d2rpc::AddLineRequest 
+{
+    fn is_valid(&self) -> bool
+    {
+        let mut is_val = true;
+        match self.line_descriptor
+        {
+            Some(ref line_descriptor) =>
+            {
+                is_val &= line_descriptor.v1.is_some();
+                is_val &= line_descriptor.v2.is_some();
+            }
+            None =>
+            {
+                is_val = false;
+            }
+        }
+        is_val
+    }
+}
+//}}}
+//{{{  impl: From<d2rpc::LineDescriptor> for LineDescriptor
+impl From<d2rpc::LineDescriptor> for LineDescriptor
+{
+    fn from(line_desc: d2rpc::LineDescriptor) -> Self
+    {
+        let line_desc_out = LineDescriptor {
+            v1: line_desc.v1.unwrap().into(),
+            v2: line_desc.v2.unwrap().into(),
+            color: line_desc.color.unwrap().into(),
+        };
+        line_desc_out
+    }
+}
+//}}}
+//{{{ impl: From<LineDescriptor> for d2rpc::LineDescriptor
+impl From<LineDescriptor> for d2rpc::LineDescriptor 
+{
+    fn from(line_desc: LineDescriptor) -> Self
+    {
+        let line_desc_out = d2rpc::LineDescriptor {
+            v1: Some(line_desc.v1.into()),
+            v2: Some(line_desc.v2.into()),
+            color: Some(line_desc.color.into()),
+        };
+        line_desc_out
     }
 }
 //}}}

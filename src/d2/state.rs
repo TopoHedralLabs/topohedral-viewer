@@ -6,8 +6,8 @@
 //{{{ crate imports 
 use super::{
     camera::View,
-    mesh::{AxesDescriptor, CircleDescriptor, Mesh, Mesh2D, SquareDescriptor},
-    vertex::Vertex,
+    mesh::{AxesDescriptor, CircleDescriptor, Mesh, Mesh2D, SquareDescriptor, LineDescriptor},
+    vertex::Vertex 
 };
 use crate::core::{StateCore, ViewStateCore};
 use crate::events::EventController;
@@ -72,6 +72,11 @@ pub trait State2D<'a>
         axes_desc: &AxesDescriptor,
     ) -> usize;
 
+    fn add_line(
+        &mut self, 
+        line_desc: &LineDescriptor,
+    ) -> usize;
+
     fn add_square(
         &mut self,
         square_desc: &SquareDescriptor,
@@ -93,6 +98,15 @@ impl<'a> State2D<'a> for State<'a>
     {
         let axes_mesh = Mesh::create_axes(axes_desc);
         self.add_mesh(axes_mesh)
+    }
+
+    fn add_line(
+        &mut self, 
+        line_desc: &LineDescriptor,
+    ) -> usize
+    {
+        let line_mesh = Mesh::create_line(line_desc);
+        self.add_mesh(line_mesh)
     }
 
     fn add_square(

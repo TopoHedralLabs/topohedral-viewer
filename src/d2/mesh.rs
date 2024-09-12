@@ -39,6 +39,14 @@ pub struct AxesDescriptor {
 }
 //..................................................................................................
 //}}}
+//{{{ struct LineDescriptor
+#[derive(Deserialize, Serialize)]
+pub struct LineDescriptor {
+    pub v1: Vec2, 
+    pub v2: Vec2, 
+    pub color: Color,
+}
+//}}}
 //{{{ struct: SquareDescriptor
 #[derive(Deserialize, Serialize)]
 pub struct SquareDescriptor {
@@ -83,6 +91,7 @@ pub struct CircleDescriptor {
 /// purposes, such as rendering or visualization.
 pub trait Mesh2D<'a> {
     fn create_axes(axes: &AxesDescriptor) -> Self;
+    fn create_line(line: &LineDescriptor) -> Self;
     fn create_square(square: &SquareDescriptor) -> Self;
     fn create_circle(circle: &CircleDescriptor) -> Self;
     fn add_vertex(&mut self, v: &Vec2, lin_color: &Color, tri_color: &Color);
@@ -110,6 +119,14 @@ impl<'a> Mesh2D<'a> for Mesh<'a> {
         let v3 = axes.origin - axes.y_axis * axes.neg_len;
         let v4 = axes.origin + axes.y_axis * axes.pos_len;
         mesh.add_line(&v3, &v4, &Color::Green, &Color::default());
+        mesh
+    }
+    //}}}
+    //{{{ fun: create_line
+    fn create_line(line: &LineDescriptor) -> Self
+    {
+        let mut mesh = Mesh::from_num_lines(1);
+        mesh.add_line(&line.v1, &line.v2, &line.color, &Color::default());
         mesh
     }
     //}}}

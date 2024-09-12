@@ -47,6 +47,24 @@ pub struct AddAxesRequest {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct LineDescriptor {
+    #[prost(message, optional, tag = "1")]
+    pub v1: ::core::option::Option<Vec2>,
+    #[prost(message, optional, tag = "2")]
+    pub v2: ::core::option::Option<Vec2>,
+    #[prost(message, optional, tag = "3")]
+    pub color: ::core::option::Option<Color>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct AddLineRequest {
+    #[prost(string, tag = "1")]
+    pub client_name: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub line_descriptor: ::core::option::Option<LineDescriptor>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SquareDescriptor {
     #[prost(message, optional, tag = "1")]
     pub origin: ::core::option::Option<Vec2>,
@@ -272,6 +290,31 @@ pub mod state_service_client {
                 .insert(GrpcMethod::new("d2rpc.StateService", "AddAxes"));
             self.inner.unary(req, path, codec).await
         }
+        pub async fn add_line(
+            &mut self,
+            request: impl tonic::IntoRequest<super::AddLineRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::AddItemResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/d2rpc.StateService/AddLine",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("d2rpc.StateService", "AddLine"));
+            self.inner.unary(req, path, codec).await
+        }
         pub async fn add_square(
             &mut self,
             request: impl tonic::IntoRequest<super::AddSquareRequest>,
@@ -403,6 +446,10 @@ pub mod state_service_server {
         async fn add_axes(
             &self,
             request: tonic::Request<super::AddAxesRequest>,
+        ) -> std::result::Result<tonic::Response<super::AddItemResponse>, tonic::Status>;
+        async fn add_line(
+            &self,
+            request: tonic::Request<super::AddLineRequest>,
         ) -> std::result::Result<tonic::Response<super::AddItemResponse>, tonic::Status>;
         async fn add_square(
             &self,
@@ -538,6 +585,52 @@ pub mod state_service_server {
                     let fut = async move {
                         let inner = inner.0;
                         let method = AddAxesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/d2rpc.StateService/AddLine" => {
+                    #[allow(non_camel_case_types)]
+                    struct AddLineSvc<T: StateService>(pub Arc<T>);
+                    impl<
+                        T: StateService,
+                    > tonic::server::UnaryService<super::AddLineRequest>
+                    for AddLineSvc<T> {
+                        type Response = super::AddItemResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::AddLineRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StateService>::add_line(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = AddLineSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(

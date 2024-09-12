@@ -76,6 +76,31 @@ impl d2rpc::state_service_server::StateService for StateServer
         out
     }
     //}}}
+    async fn add_line(
+        &self, 
+        request: Request<d2rpc::AddLineRequest>,
+    ) -> Result<Response<d2rpc::AddItemResponse>, Status>
+    {
+        let addr = request.remote_addr();
+        let msg = request.into_inner();
+        //{{{ trace
+        info!("Received add_line request from {} on port {:?}", msg.client_name, addr);
+        //}}}
+        let out: Result<Response<d2rpc::AddItemResponse>, Status> = if msg.is_valid()   
+        {
+            let line_desc = msg.line_descriptor.unwrap().into();
+            let mut state = self.state.lock().unwrap();
+            let mesh_uid = state.add_line(&line_desc);
+            let add_line_result = d2rpc::AddItemResponse {
+                id: mesh_uid as u64,
+            };
+            Ok(Response::new(add_line_result))
+        }
+        else {
+            Err(Status::invalid_argument("Invalid line descriptor"))
+        };
+        out
+    }
     //{{{ fun: add_square
     async fn add_square(
         &self,
