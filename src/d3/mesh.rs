@@ -191,6 +191,7 @@ pub trait Mesh3D<'a> {
     fn create_sphere(sphere: &SphereDescriptor) -> Self;
     fn create_axes(axes: &AxesDescriptor) -> Self;
     fn add_vertex(&mut self, v: &Vec3, normal: &Vec3, line_color: &Color, tri_color: &Color);
+    fn add_line_indices(&mut self, i1: u32, i2: u32) -> Result<(), Error>;
     fn add_triangle_indices(&mut self, i1: u32, i2: u32, i3: u32) -> Result<(), Error> ;
     fn add_line(&mut self, v1: &Vec3, v2: &Vec3, line_color: &Color, tri_color: &Color);
     fn add_triangle(
@@ -731,6 +732,17 @@ impl<'a> Mesh3D<'a> for Mesh<'a> {
     }
     //}}}
     //{{{ fun: add_line_indices
+    fn add_line_indices(&mut self, i1: u32, i2: u32) -> Result<(), Error>  {
+        if i1 <= self.num_vertices() as u32 && i2 <= self.num_vertices() as u32 {
+            self.append_indices(&[i1, i2]);
+            Ok(())
+        }
+        else {
+            Err(Error::IndexOutOfBounds)
+        }
+    }
+    //}}}
+    //{{{ fun: add_triangle_indices
     fn add_triangle_indices(&mut self, i1: u32, i2: u32, i3: u32) -> Result<(), Error>  {
         if i1 <= self.num_vertices() as u32 && i2 <= self.num_vertices() as u32 && i3 <= self.num_vertices() as u32 {
             self.append_indices(&[i1, i2, i3]);
