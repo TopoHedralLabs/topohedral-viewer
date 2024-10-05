@@ -4,7 +4,7 @@
 //--------------------------------------------------------------------------------------------------
 
 //{{{ crate imports
-use super::super::mesh::{AxesDescriptor, CircleDescriptor, Mesh, SquareDescriptor};
+use super::super::mesh::{AxesDescriptor, LineDescriptor, CircleDescriptor, Mesh, SquareDescriptor};
 use super::d2rpc;
 use super::d2rpc::state_service_client::StateServiceClient;
 use std::result::Result;
@@ -93,10 +93,11 @@ impl Client2D {
     }
     //}}}
     //{{{ fun: add_line
-    pub fn add_line(&mut self, line_desc: d2rpc::LineDescriptor) -> Result<usize, Error> {
+    pub fn add_line(&mut self, line_desc: LineDescriptor) -> Result<usize, Error> {
+        let line_desc_rpc: d2rpc::LineDescriptor = line_desc.into();
         let request = Request::new(d2rpc::AddLineRequest {
             client_name: self.client_name.clone(),
-            line_descriptor: Some(line_desc),
+            line_descriptor: Some(line_desc_rpc),
         });
         let response = self.tokio_runtime.block_on(self.stub.add_line(request))?;
         Ok(response.into_inner().id as usize)
