@@ -96,6 +96,7 @@ pub trait Mesh2D<'a> {
     fn create_circle(circle: &CircleDescriptor) -> Self;
     fn add_vertex(&mut self, v: &Vec2, lin_color: &Color, tri_color: &Color);
     fn add_line_indices(&mut self, i1: u32, i2: u32) -> Result<(), Error>;
+    fn add_triangle_indices(&mut self, i1: u32, i2: u32, i3: u32) -> Result<(), Error> ;
     fn add_line(&mut self, v1: &Vec2, v2: &Vec2, line_color: &Color, tri_color: &Color);
     fn add_triangle(
         &mut self,
@@ -254,6 +255,17 @@ impl<'a> Mesh2D<'a> for Mesh<'a> {
             line_color: *lin_color,
             triangle_color: *tri_color,
         }));
+    }
+    //}}}
+    //{{{ fun: add_triangle_indices
+    fn add_triangle_indices(&mut self, i1: u32, i2: u32, i3: u32) -> Result<(), Error>  {
+        if i1 <= self.num_vertices() as u32 && i2 <= self.num_vertices() as u32 && i3 <= self.num_vertices() as u32 {
+            self.append_indices(&[i1, i2, i3]);
+            Ok(())
+        }
+        else {
+            Err(Error::IndexOutOfBounds)
+        }
     }
     //}}}
     //{{{ fun: add_line_indices
